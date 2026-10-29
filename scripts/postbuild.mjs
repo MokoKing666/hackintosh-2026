@@ -23,13 +23,16 @@ const ROUTES = [
   'intel',
   'amd',
   'gpu',
-  'vm',
+  'virtualization',
   'peripherals',
-  'builder',
+  'generator',
   'library',
   'library/projects',
   'library/claims',
   'library/dead',
+  // 旧路径保留，命中后由前端重定向
+  'vm',
+  'builder',
 ];
 for (const route of ROUTES) {
   const dir = join(dist, route);

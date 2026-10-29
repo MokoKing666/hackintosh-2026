@@ -12,8 +12,11 @@ const base: BuildInput = {
   boardId: 'board-z490',
   wifiId: 'wifi-bcm94360',
   audioId: 'audio-alc',
+  nvmeId: 'ssd-sn850',
   targetOs: '26.7',
   route: 'bare-metal',
+  acceptOclp: true,
+  allowExperimental: true,
 };
 
 const run = (patch: Partial<BuildInput>) => solve({ ...base, ...patch });
@@ -141,6 +144,29 @@ describe('规则引擎 · CPU 与冲突', () => {
 });
 
 describe('规则引擎 · 缺失输入与确定性', () => {
+  it('NVMe 黑名单硬盘直接阻断', () => {
+    const r = run({ nvmeId: 'ssd-pm981' });
+    expect(r.verdict).toBe('incompatible');
+    expect(r.findings.some((f) => f.severity === 'blocker' && f.text.includes('PM981'))).toBe(true);
+  });
+
+  it('不接受实验驱动时，第三方驱动显卡被阻断', () => {
+    const r = run({ gpuId: 'gpu-blackwell', targetOs: '26', allowExperimental: false });
+    expect(r.verdict).toBe('incompatible');
+    expect(r.findings.some((f) => f.text.includes('实验驱动'))).toBe(true);
+  });
+
+  it('接受实验驱动后同一组合变为实验性支持', () => {
+    const r = run({ gpuId: 'gpu-blackwell', targetOs: '26', allowExperimental: true });
+    expect(r.verdict).toBe('experimental');
+  });
+
+  it('不接受 OCLP 根补丁时 Broadcom 方案阻断', () => {
+    const r = run({ targetOs: '26', acceptOclp: false });
+    expect(r.verdict).toBe('incompatible');
+    expect(r.findings.some((f) => f.text.includes('OCLP'))).toBe(true);
+  });
+
   it('缺少 CPU 返回信息不足', () => {
     const r = run({ cpuId: null });
     expect(r.verdict).toBe('unknown');

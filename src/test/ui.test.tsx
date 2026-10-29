@@ -5,8 +5,11 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { VerdictBadge } from '@/components/VerdictBadge';
 import { DataTable } from '@/components/DataTable';
 import type { Column } from '@/components/DataTable';
-import { BuilderPage } from '@/pages/BuilderPage';
+import { GeneratorPage } from '@/pages/GeneratorPage';
 import { LibraryPage } from '@/pages/LibraryPage';
+import { EvidencePopover } from '@/components/EvidencePopover';
+import { HardwareCard } from '@/components/HardwareCard';
+import { HARDWARE } from '@/domain/hardware';
 
 interface Row {
   id: string;
@@ -94,11 +97,11 @@ describe('DataTable', () => {
   });
 });
 
-describe('BuilderPage', () => {
+describe('GeneratorPage', () => {
   it('默认配置给出有条件可用', async () => {
     render(
       <MemoryRouter initialEntries={['/builder']}>
-        <BuilderPage />
+        <GeneratorPage />
       </MemoryRouter>,
     );
     expect(await screen.findByText('有条件可用')).toBeInTheDocument();
@@ -109,7 +112,7 @@ describe('BuilderPage', () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={['/builder']}>
-        <BuilderPage />
+        <GeneratorPage />
       </MemoryRouter>,
     );
     await user.selectOptions(screen.getByLabelText('显卡 / 核显'), 'gpu-rx7900');
@@ -120,7 +123,7 @@ describe('BuilderPage', () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={['/builder']}>
-        <BuilderPage />
+        <GeneratorPage />
       </MemoryRouter>,
     );
     await user.selectOptions(screen.getByLabelText('平台'), 'arm');
@@ -166,5 +169,38 @@ describe('LibraryPage', () => {
     );
     await user.type(screen.getByLabelText('搜索'), 'zzzz-no-such-hardware');
     expect(await screen.findByText('没有匹配的硬件')).toBeInTheDocument();
+  });
+});
+
+describe('EvidencePopover', () => {
+  it('默认只显示等级与条数，点击后展开来源', async () => {
+    const user = userEvent.setup();
+    render(<EvidencePopover ids={['E-OC-108', 'E-DORTANIA-TAHOE']} />);
+    const trigger = screen.getByRole('button', { name: /证据/ });
+    expect(trigger.textContent).toContain('2');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await user.click(trigger);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText(/OpenCorePkg 1.0.8/)).toBeInTheDocument();
+  });
+
+  it('按 Esc 关闭浮层', async () => {
+    const user = userEvent.setup();
+    render(<EvidencePopover ids={['E-OC-108']} />);
+    await user.click(screen.getByRole('button', { name: /证据/ }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});
+
+describe('HardwareCard', () => {
+  it('三层结构：标题、状态、指标、展开、证据', async () => {
+    const h = HARDWARE.find((x) => x.id === 'gpu-rx6600')!;
+    const { container } = render(<HardwareCard h={h} />);
+    expect(screen.getByText('RX 6600 / 6600 XT（Navi 23）')).toBeInTheDocument();
+    expect(container.querySelector('.card__specs')).not.toBeNull();
+    expect(screen.getByText('配置要求与限制')).toBeInTheDocument();
+    expect(container.querySelector('.evidence-chip')).not.toBeNull();
   });
 });

@@ -1,18 +1,18 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { HARDWARE } from '@/domain/hardware';
-import { HardwareTable } from '@/components/HardwareTable';
+import { HardwareCard } from '@/components/HardwareCard';
 import { SourceList } from '@/components/Evidence';
 
 const COSTS = [
   {
     name: 'Docker Desktop',
     state: '不可用',
-    note: 'Linux 容器需要 HVF，只能退回远程 Docker 或 Colima 的远程模式',
+    note: 'Linux 容器依赖 Hypervisor.framework，只能退回远程 Docker',
   },
-  { name: 'Parallels Desktop', state: '不可用', note: '启动即报错' },
-  { name: 'VMware Fusion', state: '不可用', note: '同上' },
-  { name: 'Android 模拟器（AVD）', state: '无硬件加速', note: '能跑但慢到不可用' },
-  { name: 'Adobe 部分组件', state: '需额外 patch', note: 'Lightroom 与部分 GPU 加速路径' },
+  { name: 'Parallels / VMware Fusion', state: '不可用', note: '启动即报错，无绕过方案' },
+  { name: 'Android 模拟器（AVD）', state: '无硬件加速', note: '可运行但慢到不可用' },
+  { name: 'Adobe 部分组件', state: '需额外补丁', note: 'Lightroom 与部分 GPU 加速路径' },
+  { name: 'Intel MKL 依赖软件', state: '需替换库', note: '部分科学计算与 AI 工具链' },
   { name: 'FairPlay / Apple TV+', state: '依赖独显', note: '需免驱 A 卡，核显不行' },
 ];
 
@@ -20,68 +20,74 @@ export function AmdPage() {
   useDocumentTitle('AMD 平台');
   const cpus = HARDWARE.filter((h) => h.category === 'cpu' && h.platform === 'amd');
   const apus = HARDWARE.filter((h) => h.category === 'apu');
-  const evidenceIds = [
-    ...new Set([...cpus.flatMap((c) => c.evidenceIds), ...apus.flatMap((a) => a.evidenceIds)]),
-  ];
+  const evidenceIds = [...new Set([...cpus, ...apus].flatMap((h) => h.evidenceIds))];
 
   return (
     <>
       <section className="page-head">
         <div className="container">
-          <p className="eyebrow">AMD</p>
-          <h1>用补丁换来的性能</h1>
+          <p className="eyebrow">AMD 平台</p>
+          <h1 className="page-title">暴力的多核性能。代价明确的补丁哲学。</h1>
           <p className="lead">
-            AMD 平台的性价比一直很有说服力：同样的钱买到更多核心，Zen3 至今是最成熟的非 Intel 方案。
-            代价不在装的时候，而在装完之后——你会发现某些东西永远用不了。
+            借助 AMD Vanilla 内核二进制补丁，Ryzen 全系均可引导 macOS 26
+            Tahoe。但在上车之前，你必须清楚内核指令替换带来的三大结构性代价。
           </p>
         </div>
       </section>
 
       <section className="section section--tight">
         <div className="container">
-          <HardwareTable
-            rows={cpus}
-            label="AMD CPU 兼容矩阵"
-            caption={<span>所有 AMD 方案的共同代价：没有 Hypervisor，且必须配独显。</span>}
-          />
+          <div className="section__head">
+            <p className="eyebrow">兼容矩阵</p>
+            <h2>Ryzen 与 Threadripper</h2>
+          </div>
+          <div className="grid grid--3">
+            {[...cpus, ...apus].map((h) => (
+              <HardwareCard key={h.id} h={h} />
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="section section--alt">
+      <section className="section section--elevated">
         <div className="container">
           <div className="split">
             <div>
               <p className="eyebrow">补丁链</p>
-              <h2>AMD_Vanilla 做的四件事</h2>
+              <h2>AMD_Vanilla 到底改了什么</h2>
               <p className="lead" style={{ marginTop: 12 }}>
-                它不是「让 macOS 支持 AMD」，而是把内核里那些假定「我是 Intel」的指令一条条改掉。
+                它不是「让 macOS 支持 AMD」，而是把内核里那些假定「我是 Intel」的指令一条条替换掉。
+                补丁是二进制级的，所以每个系统小版本都要重新对齐。
               </p>
             </div>
             <div className="stack">
               <div className="card">
-                <h3 className="card__title">① 改 CPUID 与核心数</h3>
-                <p className="card__body">
-                  补丁里有一个 _cpuid_set_info 的替换块，需要按物理核心数改最后一位（8 核写 08，12
-                  核写 0C）。 改错会直接卡在启动早期。
+                <h3 className="card__title">① 核心数补丁（Core Count Patch）</h3>
+                <p className="card__verdict">
+                  补丁里有一个 <span className="code-pill">_cpuid_set_info</span> 替换块，
+                  需要按物理核心数改最后一位：6 核写 <span className="code-pill">06</span>，8 核写{' '}
+                  <span className="code-pill">08</span>，16 核写{' '}
+                  <span className="code-pill">10</span>。写错会直接卡在启动早期。
                 </p>
               </div>
               <div className="card">
-                <h3 className="card__title">② 补 MSR 与电源管理</h3>
-                <p className="card__body">
-                  绕开 Intel 专有的 MSR 读写，改走 AMD 的等效路径，再由 VirtualSMC 模拟一层 SMC。
+                <h3 className="card__title">② MSR 与电源管理</h3>
+                <p className="card__verdict">
+                  绕开 Intel 专有的 MSR 读写，改走 AMD 等效路径，再由 VirtualSMC 模拟一层 SMC。
                 </p>
               </div>
               <div className="card">
-                <h3 className="card__title">③ Zen4 额外打 IOPCIFamily 补丁</h3>
-                <p className="card__body">
-                  这一条同时修好 MSI 的 A520 / B550 / X570 主板，Zen4 平台默认启用。
+                <h3 className="card__title">③ PAT 重映射：两种流派</h3>
+                <p className="card__verdict">
+                  Algrey 补丁保守，显存带宽略低但音频/USB 更稳；Shaneee 补丁激进，跑分更高，
+                  但在部分 Navi 卡上会出现爆音与 USB 掉线。选哪个取决于你是跑分还是干活。
                 </p>
               </div>
               <div className="card">
-                <h3 className="card__title">④ Zen5 需要 OpenCore ≥ 1.0.2</h3>
-                <p className="card__body">
-                  靠 AMD_CPU_EXT_FAMILY_1AH
-                  支持。注意：公开案例很少，社区把它归在「验证中」，不是「成熟」。
+                <h3 className="card__title">④ Zen4 / Zen5 的额外门槛</h3>
+                <p className="card__verdict">
+                  Zen4 需 IOPCIFamily 补丁（同时修好 MSI 500 系主板）；Zen5 依赖 OpenCore ≥ 1.0.2 的
+                  CPU 家族识别，公开案例很少。
                 </p>
               </div>
             </div>
@@ -89,18 +95,18 @@ export function AmdPage() {
         </div>
       </section>
 
-      <section className="section section--invert">
+      <section className="section">
         <div className="container">
-          <div className="split">
-            <div>
-              <p className="eyebrow">代价</p>
-              <h2>没有 Hypervisor，等于半个生态断掉</h2>
-              <p className="lead" style={{ marginTop: 12 }}>
-                AMD 补丁绕过了 Intel 的虚拟化指令，代价是 Hypervisor.framework 起不来。
-                这不是「虚拟机慢一点」，是直接不可用。
-              </p>
-            </div>
-            <div className="card" style={{ background: 'transparent' }}>
+          <div className="section__head">
+            <p className="eyebrow">结构性代价</p>
+            <h2>没有 Hypervisor，半个生态断掉</h2>
+            <p className="lead" style={{ marginTop: 12 }}>
+              AMD 补丁绕过了 Intel 的虚拟化指令，代价是 Hypervisor.framework 起不来。
+              这不是「虚拟机慢一点」，是直接不可用。
+            </p>
+          </div>
+          <div className="table-shell">
+            <div className="table-scroll">
               <table className="data" aria-label="AMD 平台不可用功能">
                 <thead>
                   <tr>
@@ -126,21 +132,6 @@ export function AmdPage() {
           <div className="callout callout--warn" style={{ marginTop: 20 }}>
             <strong>先问自己一句：</strong>你平时开不开 Docker？如果开，AMD 平台基本可以排除，
             除非你愿意把容器全放到另一台机器上。
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="container">
-          <h2 style={{ marginBottom: 8 }}>APU 核显：断代非常干净</h2>
-          <p className="small muted" style={{ marginBottom: 16 }}>
-            NootedRed 是唯一能让 AMD 核显出画面的项目，但它只覆盖 GCN / Vega 一代，再往后就断了。
-          </p>
-          <HardwareTable rows={apus} label="AMD APU 兼容矩阵" />
-          <div className="callout" style={{ marginTop: 16 }}>
-            <strong>一个容易忽略的细节：</strong>NootedRed 的 README 上挂着「written by humans, not
-            AI」徽章， 并在 2026-10 换成了 ChefKiss Open Knowledge License
-            v1，明文禁止用于训练或配合 AI。 这个圈子里，「谁写的」本身已经成了立场问题。
           </div>
           <SourceList ids={evidenceIds} />
         </div>

@@ -3,21 +3,47 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { ARM_ROUTES } from '@/domain/arm';
 import { HARDWARE } from '@/domain/hardware';
 import { PROJECTS } from '@/domain/projects';
-import { HardwareTable } from '@/components/HardwareTable';
+import { HardwareCard } from '@/components/HardwareCard';
 import { VerdictBadge } from '@/components/VerdictBadge';
-import { EvidenceList, SourceList } from '@/components/Evidence';
+import { EvidencePopover } from '@/components/EvidencePopover';
+import { SourceList } from '@/components/Evidence';
 
-const BOOT_LABEL: Record<string, string> = {
-  'el2-monitor': 'EL2 监视器（伪装 Apple 平台契约）',
-  'uefi-efi': '真实 UEFI / EFI 引导',
-  virtualization: '虚拟机',
-  none: '无',
+const STAGES = ['Bootloader', 'XNU 内核', 'launchd', 'GUI 帧缓冲', 'Metal 加速'] as const;
+
+type StageState = 'yes' | 'partial' | 'no';
+
+const MATRIX: Record<string, Record<(typeof STAGES)[number], StageState>> = {
+  'arm-unixnu': {
+    Bootloader: 'yes',
+    'XNU 内核': 'yes',
+    launchd: 'yes',
+    'GUI 帧缓冲': 'yes',
+    'Metal 加速': 'partial',
+  },
+  'arm-snapintosh': {
+    Bootloader: 'yes',
+    'XNU 内核': 'yes',
+    launchd: 'yes',
+    'GUI 帧缓冲': 'yes',
+    'Metal 加速': 'partial',
+  },
+  'arm-rk3588': {
+    Bootloader: 'yes',
+    'XNU 内核': 'yes',
+    launchd: 'yes',
+    'GUI 帧缓冲': 'partial',
+    'Metal 加速': 'partial',
+  },
 };
+
+const MARK: Record<StageState, string> = { yes: '✓', partial: '◐', no: '✕' };
 
 export function ArmPage() {
   useDocumentTitle('ARM 移植');
   const rows = HARDWARE.filter((h) => h.category === 'arm');
-  const armProjects = PROJECTS.filter((p) => p.category === 'arm');
+  const armProjects = PROJECTS.filter((p) => p.category === 'arm').sort(
+    (a, b) => b.stars - a.stars,
+  );
   const evidenceIds = [
     ...new Set([
       ...rows.flatMap((r) => r.evidenceIds),
@@ -29,11 +55,11 @@ export function ArmPage() {
     <>
       <section className="page-head">
         <div className="container">
-          <p className="eyebrow">ARM</p>
-          <h1>四条路线，两种底层逻辑</h1>
+          <p className="eyebrow">ARM 移植</p>
+          <h1 className="page-title">跨越 Apple Silicon 的高墙。</h1>
           <p className="lead">
-            2026 年的 ARM 黑苹果不是一个项目，是四条互不背书的技术路线。它们唯一的共同点是：
-            都要骗过 macOS 对 Apple 硬件的那套假设。
+            将 XNU 内核与 macOS / iOS 用户态运行在非 Apple 的 ARM64 SoC
+            上，是最具极客想象力、却也最容易混杂夸大宣传的领域。本站按代码公开度、启动阶段与图形加速真实性对各项目进行独立取证。
           </p>
         </div>
       </section>
@@ -44,18 +70,20 @@ export function ArmPage() {
             {ARM_ROUTES.map((r) => (
               <article key={r.id} className="card">
                 <div className="card__head">
-                  <h2 className="card__title">{r.name}</h2>
-                  <VerdictBadge verdict={r.verdict} />
-                  <span className="badge badge--neutral">{BOOT_LABEL[r.bootMethod]}</span>
-                  {r.singleDevice && <span className="badge badge--neutral">单机型</span>}
-                  {r.requiresHostMac && <span className="badge badge--neutral">需 Mac 主机</span>}
-                </div>
-                <p className="card__body">
-                  主导：{r.lead} · 已达成：{r.osReached}
-                </p>
-                <div className="grid grid--2" style={{ marginTop: 12 }}>
                   <div>
-                    <p className="caption" style={{ marginBottom: 6 }}>
+                    <h2 className="card__title" style={{ fontSize: '1.25rem' }}>
+                      {r.name}
+                    </h2>
+                    <p className="caption" style={{ marginTop: 4 }}>
+                      {r.lead} · 已达成 {r.osReached}
+                    </p>
+                  </div>
+                  <VerdictBadge verdict={r.verdict} />
+                </div>
+
+                <div className="grid grid--2" style={{ marginTop: 16 }}>
+                  <div>
+                    <p className="eyebrow" style={{ marginBottom: 8 }}>
                       已实现
                     </p>
                     <ul className="list list--check">
@@ -65,7 +93,7 @@ export function ArmPage() {
                     </ul>
                   </div>
                   <div>
-                    <p className="caption" style={{ marginBottom: 6 }}>
+                    <p className="eyebrow" style={{ marginBottom: 8 }}>
                       仍缺
                     </p>
                     <ul className="list list--cross">
@@ -75,11 +103,17 @@ export function ArmPage() {
                     </ul>
                   </div>
                 </div>
-                <p className="small muted" style={{ marginTop: 12 }}>
+
+                <p className="card__verdict" style={{ marginTop: 16 }}>
                   {r.notes}
                 </p>
-                <div style={{ marginTop: 12 }}>
-                  <EvidenceList ids={r.evidenceIds} />
+
+                <div className="card__foot">
+                  <span className="caption">
+                    {r.singleDevice ? '单机型锁定' : '通用平台'} ·{' '}
+                    {r.requiresHostMac ? '需 macOS 主机喂入' : '可独立引导'}
+                  </span>
+                  <EvidencePopover ids={r.evidenceIds} />
                 </div>
               </article>
             ))}
@@ -87,98 +121,142 @@ export function ArmPage() {
         </div>
       </section>
 
-      <section className="section section--alt">
+      <section className="section section--elevated">
         <div className="container">
-          <h2 style={{ marginBottom: 8 }}>平台清单：能跑到哪一步</h2>
-          <p className="small muted" style={{ marginBottom: 16 }}>
-            「实验性支持」意味着有代码或实机演示，但离日常可用还有距离；「已知不兼容」意味着目前没有任何公开方案。
-          </p>
-          <HardwareTable
-            rows={rows}
-            label="ARM 平台兼容矩阵"
-            caption={
-              <span>
-                证据等级见每行的条码：官方文档 &gt; 上游代码 &gt; 社区报告 &gt; 项目方声明 &gt;
-                推断。
-              </span>
-            }
-          />
+          <div className="section__head">
+            <p className="eyebrow">启动阶段</p>
+            <h2>「跑起来了」有五个不同的含义</h2>
+            <p className="lead" style={{ marginTop: 12 }}>
+              从引导器接管到 Metal
+              加速，每一步之间的工程量差一个数量级。这张表是判断项目成熟度的唯一可靠刻度。
+            </p>
+          </div>
+
+          <div className="table-shell">
+            <div className="table-scroll">
+              <table className="data" aria-label="ARM 移植项目启动阶段对比">
+                <thead>
+                  <tr>
+                    <th>项目</th>
+                    {STAGES.map((s) => (
+                      <th key={s}>{s}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {ARM_ROUTES.filter((r) => MATRIX[r.id]).map((r) => (
+                    <tr key={r.id}>
+                      <td>
+                        <strong>{r.name}</strong>
+                      </td>
+                      {STAGES.map((s) => (
+                        <td key={s} className="mono-num">
+                          {MARK[MATRIX[r.id]![s]]}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  <tr>
+                    <td>
+                      <strong>ios-sweet</strong>
+                    </td>
+                    <td className="mono-num">✓</td>
+                    <td className="mono-num">✓</td>
+                    <td className="mono-num">✓</td>
+                    <td className="mono-num">✓</td>
+                    <td className="mono-num">✕</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="table-caption">
+              <span>✓ 已达成 · ◐ 部分达成 · ✕ 未达成；数据来自各项目 README 与实机演示</span>
+            </div>
+          </div>
         </div>
       </section>
 
       <section className="section">
+        <div className="container">
+          <div className="section__head">
+            <p className="eyebrow">平台清单</p>
+            <h2>能跑到哪一步，逐条记录</h2>
+          </div>
+          <div className="grid grid--3">
+            {rows.map((h) => (
+              <HardwareCard key={h.id} h={h} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section section--elevated">
         <div className="container">
           <div className="split">
             <div>
               <p className="eyebrow">为什么难</p>
               <h2>三年只有个位数团队做出来</h2>
               <p className="lead" style={{ marginTop: 12 }}>
-                x86 黑苹果是配置工程：UEFI、ACPI、PCIe 都是公开标准。ARM 这边没有标准可依。
+                x86 黑苹果是配置工程：UEFI、ACPI、PCIe 都是公开标准。ARM 这边没有标准可依，
+                每一步都要先伪造一个 Apple 硬件「应该长什么样」的假设。
               </p>
             </div>
             <div className="stack">
               <div className="card">
                 <h3 className="card__title">没有 iBoot，也没有设备树</h3>
-                <p className="card__body">
+                <p className="card__verdict">
                   Apple 的启动链是 BootROM → iBoot → 内核，中间没有 UEFI 接口。要引导 macOS，
                   要么伪造整套 EFI 环境，要么在 EL2 里造一个假平台。
                 </p>
               </div>
               <div className="card">
                 <h3 className="card__title">页表粒度对不上</h3>
-                <p className="card__body">
+                <p className="card__verdict">
                   XNU 在 Apple Silicon 上按 16KiB 页管理内存，多数 ARM SoC 的 MMU 只认 4KiB。
                   Snapintosh 为此做了一层影子页表。
                 </p>
               </div>
               <div className="card">
                 <h3 className="card__title">GPU 闭源，只能自己写驱动栈</h3>
-                <p className="card__body">
-                  Adreno、Mali 都没有 macOS 驱动。Snapintosh 自己写了 Metal 插件与 IOGPU kext， 再把
+                <p className="card__verdict">
+                  Adreno、Mali 都没有 macOS 驱动。Snapintosh 自写 Metal 插件与 IOGPU kext， 再把
                   Apple 的 AIR 翻译成 Mesa 的 ir3。
                 </p>
               </div>
               <div className="callout callout--warn">
                 <strong>关于虚拟机：</strong>UTM、VirtualBuddy 只支持 Apple Silicon 宿主，QEMU 没有
-                arm64 macOS 机器模型。在非 Apple ARM 硬件上用虚拟机跑 macOS 是架构性为零。
-                反过来，x86 上的 KVM 是条成熟主线——见 <Link to="/vm">虚拟机篇</Link>。
+                arm64 macOS 机器模型。ARM 上用虚拟机跑 macOS 是架构性为零。 反过来，x86 上的 KVM
+                是条成熟主线——见 <Link to="/virtualization">虚拟化篇</Link>。
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="section section--alt">
+      <section className="section">
         <div className="container">
-          <h2 style={{ marginBottom: 8 }}>相关项目</h2>
-          <p className="small muted" style={{ marginBottom: 16 }}>
-            共 {armProjects.length} 个，按 star 排序。「代码」列说明是否公开可复现。
-          </p>
+          <div className="section__head">
+            <p className="eyebrow">相关项目</p>
+            <h2>{armProjects.length} 个仓库，按 Star 排序</h2>
+          </div>
           <div className="grid grid--2">
-            {[...armProjects]
-              .sort((a, b) => b.stars - a.stars)
-              .map((p) => (
-                <article key={p.id} className="card">
-                  <div className="card__head">
-                    <a
-                      className="card__title"
-                      href={p.url}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                    >
-                      {p.name}
-                    </a>
-                    <span className="badge badge--neutral mono-num">
-                      {p.stars.toLocaleString('zh-CN')} ★
-                    </span>
-                  </div>
-                  <p className="card__body">{p.description}</p>
-                  <p className="card__foot">
-                    <span className="mono-num">{p.repo}</span>
-                    <span>{p.pushedAt}</span>
-                  </p>
-                </article>
-              ))}
+            {armProjects.map((p) => (
+              <article key={p.id} className="card">
+                <div className="card__head">
+                  <a className="card__title" href={p.url} target="_blank" rel="noreferrer noopener">
+                    {p.name}
+                  </a>
+                  <span className="badge badge--neutral mono-num">
+                    {p.stars.toLocaleString('zh-CN')} ★
+                  </span>
+                </div>
+                <p className="card__verdict">{p.description}</p>
+                <div className="card__foot">
+                  <span className="caption mono-num">{p.repo}</span>
+                  <span className="caption">{p.pushedAt}</span>
+                </div>
+              </article>
+            ))}
           </div>
           <SourceList ids={evidenceIds} />
         </div>

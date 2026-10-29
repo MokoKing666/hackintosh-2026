@@ -2,11 +2,15 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { validateDomain } from './domain/validate';
+import { initTheme } from './components/theme';
 import fontRegular from './assets/fonts/MiSans-400.woff2?url';
 import fontSemibold from './assets/fonts/MiSans-600.woff2?url';
 import './styles/fonts.css';
 import './styles/tokens.css';
 import './styles/app.css';
+
+// 主题要在首帧前写入，避免深色站点闪白
+initTheme();
 
 // 启动即校验：数据写错要在这里炸，而不是渲染出空表格
 validateDomain();

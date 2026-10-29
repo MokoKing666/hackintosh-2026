@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
+import { ThemeToggle } from './ThemeToggle';
+import { useTheme } from './theme';
 
 const NAV = [
   { to: '/', label: '总览', end: true },
@@ -7,15 +9,14 @@ const NAV = [
   { to: '/intel', label: 'Intel' },
   { to: '/amd', label: 'AMD' },
   { to: '/gpu', label: '显卡' },
-  { to: '/vm', label: '虚拟机' },
+  { to: '/virtualization', label: '虚拟化' },
   { to: '/peripherals', label: '外设' },
   { to: '/library', label: '资料库' },
-  { to: '/builder', label: '生成器' },
 ];
 
 function Brand() {
   return (
-    <NavLink to="/" className="brand">
+    <NavLink to="/" className="brand" aria-label="黑苹果配置全景 2026 · 回到总览">
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -29,19 +30,21 @@ function Brand() {
           strokeLinecap="round"
         />
       </svg>
-      黑苹果全景
+      黑苹果配置全景
     </NavLink>
   );
 }
 
 export function Layout() {
   const [open, setOpen] = useState(false);
+  const { theme, toggle } = useTheme();
 
   return (
     <div className="page">
       <a className="skip-link" href="#main">
         跳到正文
       </a>
+
       <header className="site-header">
         <div className="site-header__inner">
           <Brand />
@@ -55,7 +58,8 @@ export function Layout() {
           >
             <span />
           </button>
-          <nav className="site-nav" id="site-nav" data-open={open}>
+
+          <nav className="site-nav" id="site-nav" data-open={open} aria-label="主导航">
             {NAV.map((item) => (
               <NavLink
                 key={item.to}
@@ -67,6 +71,17 @@ export function Layout() {
                 {item.label}
               </NavLink>
             ))}
+            <div className="nav-actions">
+              <Link
+                to="/generator"
+                className="btn btn--primary"
+                style={{ padding: '5px 14px', fontSize: '0.8125rem' }}
+                onClick={() => setOpen(false)}
+              >
+                生成器
+              </Link>
+              <ThemeToggle theme={theme} onToggle={toggle} />
+            </div>
           </nav>
         </div>
       </header>
@@ -80,10 +95,9 @@ export function Layout() {
           <div className="site-footer__grid">
             <div>
               <h2>关于本站</h2>
-              <p className="small" style={{ maxWidth: '34em' }}>
-                2026 年 10
-                月黑苹果现状档案。数据来自上游仓库、官方文档与社区实测，每条结论都挂了证据与核验日期。
-                本站不提供任何 Apple 二进制、EFI 或安装镜像。
+              <p className="small" style={{ maxWidth: '32em' }}>
+                2026 年 10 月的非官方 macOS 技术档案。每条结论绑定证据 ID、来源类型与核验日期；
+                无法核实的说法标注为「仅有项目方声明」，不冒充已验证事实。
               </p>
             </div>
             <div>
@@ -110,13 +124,13 @@ export function Layout() {
                   <NavLink to="/library">硬件矩阵</NavLink>
                 </li>
                 <li>
-                  <Link to="/library/projects">项目图谱</Link>
+                  <NavLink to="/library/projects">项目图谱</NavLink>
                 </li>
                 <li>
-                  <Link to="/library/claims">结论台账</Link>
+                  <NavLink to="/library/claims">结论台账</NavLink>
                 </li>
                 <li>
-                  <Link to="/library/dead">取证纠错</Link>
+                  <NavLink to="/library/dead">失效与纠错</NavLink>
                 </li>
               </ul>
             </div>
@@ -124,14 +138,14 @@ export function Layout() {
               <h2>声明</h2>
               <ul className="small">
                 <li>数据截止 2026-10-29</li>
-                <li>star 数为当日 GitHub 快照</li>
-                <li>非 Apple 硬件运行 macOS 可能违反许可协议</li>
+                <li>Star 数为当日 GitHub 快照</li>
+                <li>不提供 Apple 二进制、EFI 或安装镜像</li>
               </ul>
             </div>
           </div>
           <div className="site-footer__bottom">
-            <span>黑苹果配置全景 2026 · 数据截止 2026-10-29</span>
-            <span>React + TypeScript + Vite · 无追踪、无第三方脚本</span>
+            <span>HACKINTOSH PANORAMA 2026 · 数据截止 2026-10-29</span>
+            <span>REACT · TYPESCRIPT · VITE · 无追踪脚本</span>
           </div>
         </div>
       </footer>

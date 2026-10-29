@@ -1,90 +1,78 @@
 /* ============================================================
-   tokens.css — 设计令牌（唯一来源，组件不得硬编码色值）
+   tokens.css — Apple 级设计令牌（深色为默认，浅色可切换）
    ============================================================ */
 
 :root {
-  /* 基础纸面与墨色 */
-  --paper-0: #ffffff;
-  --paper-25: #ffffff;
-  --paper-50: #f5f5f7;
-  --paper-100: #ececf0;
-  --ink-900: #1d1d1f;
-  --ink-700: #3a3a40;
-  --ink-600: #6e6e73;
-  --ink-500: #86868b;
-  --ink-300: #b4b4bc;
+  color-scheme: dark;
 
-  --fg-primary: var(--ink-900);
-  --fg-secondary: var(--ink-600);
-  --fg-tertiary: var(--ink-500);
-  --bg-page: var(--paper-25);
-  --bg-surface: var(--paper-0);
-  --bg-sunken: var(--paper-50);
+  /* 背景层级 */
+  --bg-canvas: #000000;
+  --bg-elevated: #111113;
+  --bg-card: #161618;
+  --bg-card-hover: #1d1d20;
+  --bg-inset: #0a0a0b;
+  --bg-glass: rgba(22, 22, 24, 0.76);
+  --bg-pill: rgba(255, 255, 255, 0.06);
 
-  --line: #ebebef;
-  --line-strong: #d2d2d7;
-  --line-grid: #f0f0f3;
+  /* 文字层级 */
+  --text-primary: #f5f5f7;
+  --text-secondary: #86868b;
+  --text-tertiary: #6e6e73;
+  --text-on-accent: #ffffff;
 
-  /* 交互色只用于链接、焦点、主按钮 */
-  --accent: #0071e3;
-  --accent-hover: #0062c4;
-  --accent-soft: rgba(0, 102, 204, 0.08);
-  --focus-ring: #0071e3;
+  /* 边框 */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-highlight: rgba(255, 255, 255, 0.18);
+  --divider: rgba(255, 255, 255, 0.06);
 
-  /* 六态语义色：fill / bg / border 三元组 */
-  --st-verified: #0f7b4f;
-  --st-verified-bg: #e8f5ee;
-  --st-verified-line: #b7dcc6;
-  --st-conditional: #2563eb;
-  --st-conditional-bg: #eaf1fe;
-  --st-conditional-line: #bfd3fa;
-  --st-experimental: #7a4fd8;
-  --st-experimental-bg: #f1ebfe;
-  --st-experimental-line: #d6c7f7;
-  --st-unverified: #c2410c;
-  --st-unverified-bg: #fdf0e7;
-  --st-unverified-line: #f0cbac;
-  --st-incompatible: #b42318;
-  --st-incompatible-bg: #fdecea;
-  --st-incompatible-line: #f3c2bc;
-  --st-unknown: #57534e;
-  --st-unknown-bg: #f1f0ee;
-  --st-unknown-line: #d8d5d1;
+  /* 交互 */
+  --accent-blue: #2997ff;
+  --accent-fill: #0071e3;
+  --accent-fill-hover: #0a7fe8;
+  --accent-soft: rgba(41, 151, 255, 0.12);
 
-  /* 证据等级 */
-  --ev-official: #1e4fb8;
-  --ev-upstream: #0f766e;
-  --ev-reproducible: #3f6212;
-  --ev-community: #6b7280;
-  --ev-vendor: #b45309;
-  --ev-inference: #9ca3af;
+  /* 六态语义色 */
+  --status-verified: #30d158;
+  --status-conditional: #ffd60a;
+  --status-experimental: #ff9f0a;
+  --status-unverified: #64d2ff;
+  --status-incompatible: #ff453a;
+  --status-insufficient: #8e8e93;
 
-  /* 字体：只有三档字重，杜绝伪粗体 */
+  /* 证据等级色 */
+  --ev-official: #2997ff;
+  --ev-upstream: #64d2ff;
+  --ev-reproducible: #30d158;
+  --ev-community: #98989d;
+  --ev-vendor: #ff9f0a;
+  --ev-inference: #6e6e73;
+
+  /* 字体 */
   --font-sans:
-    'MiSans', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
-    'Microsoft YaHei', 'Segoe UI', sans-serif;
+    'MiSans', -apple-system, BlinkMacSystemFont, 'SF Pro SC', 'SF Pro Display', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   --font-mono:
-    'SFMono-Regular', 'Cascadia Mono', 'JetBrains Mono', Consolas, 'Liberation Mono', monospace;
+    'SF Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  --fs-display: clamp(2.5rem, 5.4vw, 3.75rem);
-  --fs-h1: clamp(1.875rem, 3.2vw, 2.5rem);
-  --fs-h2: 1.5rem;
-  --fs-h3: 1.125rem;
-  --fs-body: 0.9375rem;
+  /* 字阶 */
+  --fs-hero: clamp(2.25rem, 5vw, 4rem);
+  --fs-page: clamp(1.75rem, 3.5vw, 2.75rem);
+  --fs-h2: clamp(1.375rem, 2.2vw, 1.75rem);
+  --fs-h3: 1.0625rem;
+  --fs-body: 1rem;
   --fs-sm: 0.875rem;
   --fs-cap: 0.75rem;
   --fs-mono: 0.8125rem;
 
-  --lh-display: 1.14;
-  --lh-h1: 1.22;
-  --lh-h2: 1.35;
-  --lh-body: 1.75;
+  --lh-hero: 1.08;
+  --lh-page: 1.12;
+  --lh-body: 1.72;
 
-  --fw-regular: 400;
-  --fw-medium: 500;
-  --fw-semibold: 600;
+  --tr-hero: -0.025em;
+  --tr-page: -0.02em;
+  --tr-h2: -0.015em;
 
-  /* 间距 4px 基准 */
+  /* 间距 */
   --sp-1: 4px;
   --sp-2: 8px;
   --sp-3: 12px;
@@ -94,68 +82,78 @@
   --sp-7: 48px;
   --sp-8: 64px;
   --sp-9: 96px;
+  --sp-10: 128px;
 
-  --r-xs: 2px;
-  --r-sm: 4px;
-  --r-md: 6px;
-  --r-lg: 10px;
-  --r-xl: 14px;
-  --r-pill: 999px;
+  /* 圆角 */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-pill: 980px;
 
-  --w-page: 1200px;
-  --w-text: 860px;
-  --header-h: 56px;
+  /* 容器 */
+  --w-page: 1180px;
+  --w-text: 780px;
+  --header-h: 52px;
 
-  --shadow-sticky: 0 1px 0 var(--line), 0 6px 12px -8px rgba(0, 0, 0, 0.28);
-
-  --dur: 180ms;
+  /* 阴影与动效 */
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.55);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 
-  /* 表格规格 */
-  --row-h: 34px;
-  --cell-px: 12px;
-  --th-h: 34px;
+  /* 表格 */
+  --row-h: 36px;
+  --cell-px: 14px;
 }
 
-/* 深色只用于少数「结论带」区块，不做全局暗色模式 */
-.section--invert {
-  --fg-primary: #f5f5f7;
-  --fg-secondary: #b9b9c0;
-  --fg-tertiary: #8e8e96;
-  --bg-page: #0b0b0f;
-  --bg-surface: #16161a;
-  --bg-sunken: #101014;
-  --line: rgba(255, 255, 255, 0.12);
-  --line-strong: rgba(255, 255, 255, 0.22);
-  --line-grid: rgba(255, 255, 255, 0.07);
-  --accent: #6cb2ff;
-  --accent-hover: #93c6ff;
-  --accent-soft: rgba(108, 178, 255, 0.12);
-  --focus-ring: #6cb2ff;
-  --st-verified: #4fd07f;
-  --st-verified-bg: rgba(79, 208, 127, 0.12);
-  --st-verified-line: rgba(79, 208, 127, 0.3);
-  --st-conditional: #7fb0ff;
-  --st-conditional-bg: rgba(127, 176, 255, 0.12);
-  --st-conditional-line: rgba(127, 176, 255, 0.3);
-  --st-experimental: #b39bf7;
-  --st-experimental-bg: rgba(179, 155, 247, 0.14);
-  --st-experimental-line: rgba(179, 155, 247, 0.32);
-  --st-unverified: #f0a06a;
-  --st-unverified-bg: rgba(240, 160, 106, 0.14);
-  --st-unverified-line: rgba(240, 160, 106, 0.32);
-  --st-incompatible: #ff7a6e;
-  --st-incompatible-bg: rgba(255, 122, 110, 0.12);
-  --st-incompatible-line: rgba(255, 122, 110, 0.32);
-  --st-unknown: #b8b3ad;
-  --st-unknown-bg: rgba(184, 179, 173, 0.12);
-  --st-unknown-line: rgba(184, 179, 173, 0.3);
-  background: var(--bg-page);
-  color: var(--fg-primary);
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg-canvas: #ffffff;
+  --bg-elevated: #f5f5f7;
+  --bg-card: #ffffff;
+  --bg-card-hover: #fafafc;
+  --bg-inset: #f5f5f7;
+  --bg-glass: rgba(251, 251, 253, 0.8);
+  --bg-pill: rgba(0, 0, 0, 0.045);
+
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-highlight: rgba(0, 0, 0, 0.16);
+  --divider: rgba(0, 0, 0, 0.06);
+
+  --accent-blue: #0066cc;
+  --accent-fill: #0071e3;
+  --accent-soft: rgba(0, 113, 227, 0.08);
+
+  --status-verified: #0f7b4f;
+  --status-conditional: #8a6100;
+  --status-experimental: #a85000;
+  --status-unverified: #0b6a8a;
+  --status-incompatible: #b42318;
+  --status-insufficient: #6e6e73;
+
+  --ev-official: #0066cc;
+  --ev-upstream: #0b6a8a;
+  --ev-reproducible: #0f7b4f;
+  --ev-community: #6e6e73;
+  --ev-vendor: #a85000;
+  --ev-inference: #86868b;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.14);
 }
 
 @media (prefers-reduced-motion: reduce) {
   :root {
-    --dur: 0ms;
+    --dur-1: 0ms;
+    --dur-2: 0ms;
+    --dur-3: 0ms;
   }
 }

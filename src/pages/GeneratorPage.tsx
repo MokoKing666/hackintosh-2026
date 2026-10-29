@@ -12,20 +12,20 @@ import {
 } from '@/domain/rules';
 import type { BuildInput, BuildRoute, MacOsVersion, Severity } from '@/domain/types';
 import { VerdictBadge } from '@/components/VerdictBadge';
-import { EvidenceList } from '@/components/Evidence';
+import { EvidencePopover } from '@/components/EvidencePopover';
 
 const OS_OPTIONS: Array<{ value: MacOsVersion; label: string }> = [
+  { value: '27', label: 'macOS 27 Golden Gate' },
   { value: '26.7', label: 'macOS 26.7 Tahoe（x86 上限）' },
   { value: '26', label: 'macOS 26 Tahoe' },
   { value: '15', label: 'macOS 15 Sequoia' },
   { value: '14', label: 'macOS 14 Sonoma' },
-  { value: '27', label: 'macOS 27 Golden Gate（仅 ARM）' },
 ];
 
 const ROUTES: Array<{ value: BuildRoute; label: string; platforms: string[] }> = [
   { value: 'bare-metal', label: '裸机安装', platforms: ['intel', 'amd'] },
-  { value: 'vm', label: '虚拟机（QEMU/KVM）', platforms: ['intel', 'amd'] },
-  { value: 'arm-experiment', label: 'ARM 实验', platforms: ['arm'] },
+  { value: 'vm', label: 'KVM 虚拟机', platforms: ['intel', 'amd'] },
+  { value: 'arm-experiment', label: 'ARM 实验路线', platforms: ['arm'] },
 ];
 
 const SEVERITY_ORDER: Severity[] = ['blocker', 'required', 'risk', 'info'];
@@ -37,6 +37,11 @@ const SEVERITY_MARK: Record<Severity, string> = {
 };
 
 function defaultsFor(platform: BuildInput['platform']): BuildInput {
+  const common = {
+    nvmeId: 'ssd-sn850',
+    acceptOclp: true,
+    allowExperimental: false,
+  };
   if (platform === 'arm') {
     return {
       platform,
@@ -47,6 +52,7 @@ function defaultsFor(platform: BuildInput['platform']): BuildInput {
       audioId: 'audio-usb',
       targetOs: '27',
       route: 'arm-experiment',
+      ...common,
     };
   }
   return {
@@ -58,6 +64,7 @@ function defaultsFor(platform: BuildInput['platform']): BuildInput {
     audioId: 'audio-alc',
     targetOs: '26.7',
     route: 'bare-metal',
+    ...common,
   };
 }
 
@@ -73,12 +80,15 @@ function readParams(params: URLSearchParams): BuildInput {
     boardId: params.get('board') ?? base.boardId,
     wifiId: params.get('wifi') ?? base.wifiId,
     audioId: params.get('audio') ?? base.audioId,
+    nvmeId: params.get('nvme') ?? base.nvmeId,
     targetOs: os && OS_OPTIONS.some((o) => o.value === os) ? os : base.targetOs,
     route: route && ROUTES.some((r) => r.value === route) ? route : base.route,
+    acceptOclp: params.get('oclp') !== '0',
+    allowExperimental: params.get('exp') === '1',
   };
 }
 
-export function BuilderPage() {
+export function GeneratorPage() {
   useDocumentTitle('配置生成器');
   const [params, setParams] = useSearchParams();
   const [input, setInput] = useState<BuildInput>(() => readParams(params));
@@ -92,8 +102,11 @@ export function BuilderPage() {
     if (input.boardId) next.set('board', input.boardId);
     if (input.wifiId) next.set('wifi', input.wifiId);
     if (input.audioId) next.set('audio', input.audioId);
+    if (input.nvmeId) next.set('nvme', input.nvmeId);
     next.set('os', input.targetOs);
     next.set('route', input.route);
+    if (!input.acceptOclp) next.set('oclp', '0');
+    if (input.allowExperimental) next.set('exp', '1');
     setParams(next, { replace: true });
   }, [input, setParams]);
 
@@ -106,27 +119,25 @@ export function BuilderPage() {
   );
   const wifis = HARDWARE.filter((h) => h.category === 'wifi');
   const audios = HARDWARE.filter((h) => h.category === 'audio');
-
-  function switchPlatform(platform: BuildInput['platform']) {
-    setInput(defaultsFor(platform));
-  }
-
-  function patch(partial: Partial<BuildInput>) {
-    setInput((prev) => ({ ...prev, ...partial }));
-  }
+  const nvmes = HARDWARE.filter((h) => h.category === 'storage');
 
   const grouped = SEVERITY_ORDER.map((severity) => ({
     severity,
     items: result.findings.filter((f) => f.severity === severity),
   })).filter((g) => g.items.length > 0);
 
-  const claimIds = [...new Set(result.findings.flatMap((f) => f.claimIds ?? []))];
   const evidenceIds = [...new Set(result.findings.flatMap((f) => f.evidenceIds))];
 
+  function patch(partial: Partial<BuildInput>) {
+    setInput((prev) => ({ ...prev, ...partial }));
+  }
+
   async function copySummary() {
+    const cpu = input.cpuId ? getHardware(input.cpuId) : null;
     const lines = [
-      `【黑苹果配置评估】${VERDICT_LABEL[result.verdict]}（置信度：${CONFIDENCE_LABEL[result.confidence]}）`,
-      `平台：${input.platform} / CPU：${input.cpuId ? getHardware(input.cpuId).name : '未选'}`,
+      `【黑苹果可行性评估】${VERDICT_LABEL[result.verdict]}（置信度：${CONFIDENCE_LABEL[result.confidence]}）`,
+      `平台：${input.platform} / CPU：${cpu?.name ?? '未选'}`,
+      `路线：${ROUTES.find((r) => r.value === input.route)?.label ?? input.route}`,
       `目标系统：macOS ${input.targetOs}`,
       `系统上限：macOS ${result.osCap.max ?? '未知'}${result.osCap.beta ? ' Beta' : ''}`,
       '',
@@ -150,10 +161,10 @@ export function BuilderPage() {
       <section className="page-head">
         <div className="container">
           <p className="eyebrow">配置生成器</p>
-          <h1>先算一遍，再拆机箱</h1>
+          <h1 className="page-title">黑苹果可行性评估引擎。</h1>
           <p className="lead">
-            选择平台、主板、显卡与外设，右侧会给出结论、系统上限、必做清单与风险。
-            每条判定都标了依据，不确定的地方会明确写「尚未验证」，而不是替你猜。
+            输入你的硬件组合与目标系统版本，基于确定性纯函数规则引擎生成兼容性诊断报告。
+            我们绝不把「未知」伪装成「可用」——每一项阻断冲突、必要补丁与存疑推断，均附带明确的技术解释与证据链接。
           </p>
         </div>
       </section>
@@ -170,11 +181,47 @@ export function BuilderPage() {
                   id="f-platform"
                   className="select"
                   value={input.platform}
-                  onChange={(e) => switchPlatform(e.target.value as BuildInput['platform'])}
+                  onChange={(e) => setInput(defaultsFor(e.target.value as BuildInput['platform']))}
                 >
                   <option value="intel">Intel x86</option>
                   <option value="amd">AMD x86</option>
-                  <option value="arm">ARM</option>
+                  <option value="arm">ARM（实验）</option>
+                </select>
+              </div>
+
+              <div className="field">
+                <label className="field__label" htmlFor="f-route">
+                  运行路线
+                </label>
+                <select
+                  id="f-route"
+                  className="select"
+                  value={input.route}
+                  onChange={(e) => patch({ route: e.target.value as BuildRoute })}
+                >
+                  {ROUTES.filter((r) => r.platforms.includes(input.platform)).map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field">
+                <label className="field__label" htmlFor="f-os">
+                  目标系统
+                </label>
+                <select
+                  id="f-os"
+                  className="select"
+                  value={input.targetOs}
+                  onChange={(e) => patch({ targetOs: e.target.value as MacOsVersion })}
+                >
+                  {OS_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -274,40 +321,57 @@ export function BuilderPage() {
               </div>
 
               <div className="field">
-                <label className="field__label" htmlFor="f-os">
-                  目标系统
+                <label className="field__label" htmlFor="f-nvme">
+                  NVMe 硬盘
                 </label>
                 <select
-                  id="f-os"
+                  id="f-nvme"
                   className="select"
-                  value={input.targetOs}
-                  onChange={(e) => patch({ targetOs: e.target.value as MacOsVersion })}
+                  value={input.nvmeId ?? ''}
+                  onChange={(e) => patch({ nvmeId: e.target.value || null })}
                 >
-                  {OS_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
+                  <option value="">未确定</option>
+                  {nvmes.map((n) => (
+                    <option key={n.id} value={n.id}>
+                      {n.name}
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="field">
-                <label className="field__label" htmlFor="f-route">
-                  使用方式
-                </label>
-                <select
-                  id="f-route"
-                  className="select"
-                  value={input.route}
-                  onChange={(e) => patch({ route: e.target.value as BuildRoute })}
-                >
-                  {ROUTES.filter((r) => r.platforms.includes(input.platform)).map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <label
+                className="field"
+                style={{
+                  gridTemplateColumns: 'auto 1fr',
+                  display: 'flex',
+                  gap: 8,
+                  alignItems: 'center',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={input.acceptOclp}
+                  onChange={(e) => patch({ acceptOclp: e.target.checked })}
+                />
+                <span className="small">接受 OCLP 根补丁（会降低 SIP）</span>
+              </label>
+
+              <label
+                className="field"
+                style={{
+                  gridTemplateColumns: 'auto 1fr',
+                  display: 'flex',
+                  gap: 8,
+                  alignItems: 'center',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={input.allowExperimental}
+                  onChange={(e) => patch({ allowExperimental: e.target.checked })}
+                />
+                <span className="small">接受第三方实验驱动</span>
+              </label>
 
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button type="button" className="btn btn--primary" onClick={copySummary}>
@@ -315,19 +379,19 @@ export function BuilderPage() {
                 </button>
                 <button
                   type="button"
-                  className="btn btn--ghost"
+                  className="btn"
                   onClick={() => setInput(defaultsFor(input.platform))}
                 >
                   重置
                 </button>
               </div>
-              <p className="caption">选择状态会写进地址栏，可以直接把链接发给别人。</p>
+              <p className="caption">选择状态写入地址栏，可直接分享给他人复现同一份结论。</p>
             </form>
 
             <div className="builder__result" aria-live="polite">
               <div className="verdict-panel">
                 <div>
-                  <p className="verdict-panel__label">结论</p>
+                  <p className="verdict-panel__label">总体判定</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
                     <span className="verdict-panel__title">{VERDICT_LABEL[result.verdict]}</span>
                     <VerdictBadge
@@ -338,7 +402,7 @@ export function BuilderPage() {
                   <p className="verdict-panel__desc">{VERDICT_MEANING[result.verdict]}</p>
                 </div>
                 <div className="verdict-panel__cap">
-                  系统上限
+                  可用系统上限
                   <b>
                     {result.osCap.max ? `macOS ${result.osCap.max}` : '—'}
                     {result.osCap.beta ? ' Beta' : ''}
@@ -348,7 +412,7 @@ export function BuilderPage() {
 
               {result.missing.length > 0 && (
                 <div className="callout callout--warn">
-                  <strong>还缺这些信息：</strong>
+                  <strong>还需要确认：</strong>
                   {result.missing.join('、')}。补齐后结论会更准确。
                 </div>
               )}
@@ -372,8 +436,7 @@ export function BuilderPage() {
                           {f.text}
                           {f.claimIds?.length ? (
                             <span className="finding__claims">
-                              依据：{f.claimIds.join(' / ')}
-                              {' · '}
+                              依据 {f.claimIds.join(' / ')} ·{' '}
                               <Link to="/library/claims">查看台账</Link>
                             </span>
                           ) : null}
@@ -384,30 +447,15 @@ export function BuilderPage() {
                 </div>
               ))}
 
-              {claimIds.length > 0 && (
-                <div className="card">
-                  <div className="card__head">
-                    <h2 className="card__title">本次判定引用的结论</h2>
-                  </div>
-                  <p className="card__body">
-                    {claimIds.map((id) => (
-                      <span key={id} className="badge badge--neutral" style={{ marginRight: 6 }}>
-                        {id}
-                      </span>
-                    ))}
-                  </p>
-                  <p className="small" style={{ marginTop: 8 }}>
-                    <Link to="/library/claims">在结论台账里逐条查看证据与限制 →</Link>
-                  </p>
-                </div>
-              )}
-
               {evidenceIds.length > 0 && (
                 <div className="card">
                   <div className="card__head">
-                    <h2 className="card__title">证据</h2>
+                    <h2 className="card__title">本次判定引用的证据</h2>
+                    <EvidencePopover ids={evidenceIds} label="全部来源" />
                   </div>
-                  <EvidenceList ids={evidenceIds.slice(0, 8)} />
+                  <p className="card__verdict">
+                    共 {evidenceIds.length} 条来源，点击右上角查看完整清单、版本与核验日期。
+                  </p>
                 </div>
               )}
 

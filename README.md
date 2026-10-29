@@ -26,11 +26,13 @@ React + TypeScript + Vite 单页应用，纯静态部署在 GitHub Pages 子路�
 | 路由     | React Router 7（BrowserRouter + basename），深链接靠 `404.html` 兜底 |
 | 样式     | 全局设计令牌（`src/styles/tokens.css`）+ 单一组件样式表，无 UI 框架  |
 | 数据校验 | Zod 4，启动时校验结构与证据引用                                      |
-| 测试     | Vitest + Testing Library（35 例）、Playwright（30 例）               |
+| 测试     | Vitest + Testing Library（42 例）、Playwright（30 例）               |
 | 质量     | ESLint 9（flat config）、Prettier                                    |
 | 部署     | GitHub Actions → Pages（artifact 方式）                              |
 
-字体：本地 MiSans 子集，三档字重（400/500/600）共约 420KB，`font-display: swap` + 关键两档预载。
+**视觉与交互**：深色为默认主题（可切换浅色），Apple 硬件页式 Bento 网格；硬件/项目卡片分三层披露——正面只有名称、状态、一句结论与 2–4 项指标，展开看配置要求，右下角证据胶囊点开是完整来源浮层（含等级、版本、核验日期）。
+
+字体：本地 MiSans 子集，三档字重（400/500/600）共约 428KB，`font-display: swap` + 关键两档预载；子集覆盖全站文案字符，构建前用 `--check` 校验缺字。
 
 ## 快速开始
 
@@ -46,8 +48,8 @@ npm run verify    # 类型检查 + Lint + 单测 + 构建
 npm run typecheck   # tsc -b --force
 npm run lint        # eslint .
 npm run format      # prettier --check .
-npm run test        # vitest run
-npm run e2e         # playwright（会自己起 preview 服务）
+npm run test        # vitest run（42 例）
+npm run e2e         # playwright（30 例，桌面 + 移动）
 npm run build       # tsc -b && vite build + postbuild
 ```
 

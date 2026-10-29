@@ -103,6 +103,7 @@ export function solve(input: BuildInput): BuildResult {
   const board = input.boardId ? BOARD_BY_ID.get(input.boardId) : undefined;
   const wifi = input.wifiId ? getHardware(input.wifiId) : null;
   const audio = input.audioId ? getHardware(input.audioId) : null;
+  const nvme = input.nvmeId ? getHardware(input.nvmeId) : null;
 
   /* ---------- 0. 输入完整性 ---------- */
   if (!cpu) {
@@ -257,6 +258,31 @@ export function solve(input: BuildInput): BuildResult {
       }
     }
 
+    /* ---------- 3.5 存储闸门 ---------- */
+    if (nvme && nvme.verdict === 'incompatible') {
+      findings.push(
+        finding(
+          'blocker',
+          `${nvme.name} 已知不兼容，安装阶段会卡死；换一块盘再继续`,
+          nvme.evidenceIds,
+        ),
+      );
+      verdict = 'incompatible';
+    }
+
+    /* ---------- 3.6 实验性驱动闸门 ---------- */
+    if (gpu && gpu.gpu?.driver === 'third-party' && !input.allowExperimental) {
+      findings.push(
+        finding(
+          'blocker',
+          `${gpu.name} 只能通过第三方实验驱动工作，但你选择了不接受实验性方案`,
+          gpu.evidenceIds,
+          ['C-015'],
+        ),
+      );
+      verdict = 'incompatible';
+    }
+
     /* ---------- 4. 冲突扫描 ---------- */
     if (input.platform === 'amd' && gpu?.gpu?.vendor === 'nvidia') {
       findings.push(
@@ -293,6 +319,29 @@ export function solve(input: BuildInput): BuildResult {
     if (wifi.features.airdrop === 'no') {
       findings.push(finding('risk', 'AirDrop / Handoff 不可用', wifi.evidenceIds, ['C-026']));
     }
+  }
+
+  // Broadcom 老卡在 26+ 必须依赖 OCLP 根补丁：用户不接受时直接阻断
+  if (wifi?.id === 'wifi-bcm94360' && compareOs(input.targetOs, '26') >= 0 && !input.acceptOclp) {
+    findings.push(
+      finding(
+        'blocker',
+        'Broadcom 老卡在 macOS 26 上必须依赖 OCLP 根补丁，而你选择了不接受根补丁',
+        ['E-BCM-COMPANION'],
+        ['C-025'],
+      ),
+    );
+    verdict = 'incompatible';
+  }
+  if (wifi?.id === 'wifi-bcm94360' && compareOs(input.targetOs, '26') >= 0 && input.acceptOclp) {
+    findings.push(
+      finding(
+        'risk',
+        'OCLP 根补丁会降低系统完整性保护，并影响后续增量更新；每次小版本可能需重打',
+        ['E-DORTANIA-TAHOE'],
+        ['C-025'],
+      ),
+    );
   }
 
   /* ---------- 6. 缺失信息 ---------- */

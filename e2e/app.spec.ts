@@ -4,8 +4,8 @@ test.describe('路由与导航', () => {
   test('首页加载并显示标题与统计', async ({ page }) => {
     await page.goto('./');
     await expect(page).toHaveTitle(/黑苹果配置全景 2026/);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('x86 定格');
-    await expect(page.getByText('数据截止 2026-10-29').first()).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('站在 x86 的终点');
+    await expect(page.getByText('2026-10-29').first()).toBeVisible();
   });
 
   test('直接访问子页面可用（不是只能从首页点进去）', async ({ page }) => {
@@ -15,9 +15,9 @@ test.describe('路由与导航', () => {
   });
 
   test('刷新子页面仍然正常', async ({ page }) => {
-    await page.goto('builder');
+    await page.goto('generator');
     await page.reload();
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('先算一遍');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('可行性评估引擎');
   });
 
   test('浏览器前进后退可用', async ({ page }) => {
@@ -30,8 +30,8 @@ test.describe('路由与导航', () => {
 
   test('未知路径显示 404 页面而不是白屏', async ({ page }) => {
     await page.goto('no-such-page');
-    await expect(page.getByText('这个地址没有内容')).toBeVisible();
-    await expect(page.getByRole('link', { name: '回到总览' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('这个地址没有内容');
+    await expect(page.getByRole('link', { name: '回到总览', exact: true })).toBeVisible();
   });
 
   test('页脚链接指向有效页面', async ({ page }) => {
@@ -75,20 +75,20 @@ test.describe('资料库交互', () => {
 
 test.describe('配置生成器', () => {
   test('默认配置给出结论与系统上限', async ({ page }) => {
-    await page.goto('builder');
+    await page.goto('generator');
     await expect(page.getByText('有条件可用').first()).toBeVisible();
     await expect(page.locator('.verdict-panel__cap')).toContainText('26.7');
   });
 
   test('换成不兼容显卡后结论变化，并写入 URL', async ({ page }) => {
-    await page.goto('builder');
+    await page.goto('generator');
     await page.getByLabel('显卡 / 核显').selectOption('gpu-rx7900');
     await expect(page.getByText('已知不兼容').first()).toBeVisible();
     await expect(page).toHaveURL(/gpu=gpu-rx7900/);
   });
 
   test('切到 ARM 后隐藏显卡选择并给出实验性结论', async ({ page }) => {
-    await page.goto('builder');
+    await page.goto('generator');
     await page.getByLabel('平台').selectOption('arm');
     await expect(page.getByLabel('显卡 / 核显')).toHaveCount(0);
     await expect(page.getByText('实验性支持').first()).toBeVisible();
@@ -96,7 +96,7 @@ test.describe('配置生成器', () => {
 
   test('复制清单按钮有真实反馈', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await page.goto('builder');
+    await page.goto('generator');
     await page.getByRole('button', { name: '复制清单' }).click();
     await expect(page.getByRole('button', { name: '已复制' })).toBeVisible();
   });

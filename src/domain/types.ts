@@ -234,8 +234,13 @@ export interface BuildInput {
   boardId: string | null;
   wifiId: string | null;
   audioId: string | null;
+  nvmeId: string | null;
   targetOs: MacOsVersion;
   route: BuildRoute;
+  /** 是否接受 OCLP 根补丁（会降低系统完整性保护） */
+  acceptOclp: boolean;
+  /** 是否接受第三方实验驱动（NullMoth / WhateverXe / XeGfx） */
+  allowExperimental: boolean;
 }
 
 export interface BoardRecord {

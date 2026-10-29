@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { HomePage } from '@/pages/HomePage';
 
@@ -8,15 +8,17 @@ const ArmPage = lazy(() => import('@/pages/ArmPage').then((m) => ({ default: m.A
 const IntelPage = lazy(() => import('@/pages/IntelPage').then((m) => ({ default: m.IntelPage })));
 const AmdPage = lazy(() => import('@/pages/AmdPage').then((m) => ({ default: m.AmdPage })));
 const GpuPage = lazy(() => import('@/pages/GpuPage').then((m) => ({ default: m.GpuPage })));
-const VmPage = lazy(() => import('@/pages/VmPage').then((m) => ({ default: m.VmPage })));
+const VirtualizationPage = lazy(() =>
+  import('@/pages/VirtualizationPage').then((m) => ({ default: m.VirtualizationPage })),
+);
 const PeripheralsPage = lazy(() =>
   import('@/pages/PeripheralsPage').then((m) => ({ default: m.PeripheralsPage })),
 );
 const LibraryPage = lazy(() =>
   import('@/pages/LibraryPage').then((m) => ({ default: m.LibraryPage })),
 );
-const BuilderPage = lazy(() =>
-  import('@/pages/BuilderPage').then((m) => ({ default: m.BuilderPage })),
+const GeneratorPage = lazy(() =>
+  import('@/pages/GeneratorPage').then((m) => ({ default: m.GeneratorPage })),
 );
 const NotFoundPage = lazy(() =>
   import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
@@ -39,7 +41,7 @@ export function App() {
       <Suspense
         fallback={
           <div className="container" style={{ paddingTop: 120, paddingBottom: 120 }}>
-            正在加载…
+            <span className="caption">正在加载…</span>
           </div>
         }
       >
@@ -50,11 +52,14 @@ export function App() {
             <Route path="intel" element={<IntelPage />} />
             <Route path="amd" element={<AmdPage />} />
             <Route path="gpu" element={<GpuPage />} />
-            <Route path="vm" element={<VmPage />} />
+            <Route path="virtualization" element={<VirtualizationPage />} />
             <Route path="peripherals" element={<PeripheralsPage />} />
             <Route path="library" element={<LibraryPage />} />
             <Route path="library/:tab" element={<LibraryPage />} />
-            <Route path="builder" element={<BuilderPage />} />
+            <Route path="generator" element={<GeneratorPage />} />
+            {/* 旧路径兼容 */}
+            <Route path="vm" element={<Navigate to="/virtualization" replace />} />
+            <Route path="builder" element={<Navigate to="/generator" replace />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

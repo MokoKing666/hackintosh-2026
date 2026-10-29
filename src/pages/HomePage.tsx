@@ -2,76 +2,123 @@ import { Link } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { HARDWARE } from '@/domain/hardware';
 import { PROJECTS } from '@/domain/projects';
-import { CLAIMS, CORRECTIONS } from '@/domain/claims';
+import { CLAIMS } from '@/domain/claims';
 import { TIMELINE } from '@/domain/arm';
 
-const PLATFORMS = [
+const OS_BOUNDARY = [
   {
-    to: '/arm',
-    kicker: 'ARM',
-    title: '四条移植路线',
-    desc: 'UniXNU 的六层栈、Snapintosh 的 EL2 伪装、RK3588 的真 EFI、ios-sweet 的反向移植。',
-    badges: ['实验性支持', '4 条线'],
+    os: 'macOS 15 Sequoia',
+    arch: 'x86_64 + arm64e',
+    intel: '支持',
+    smbios: '全量机型',
+    stack: '驱动栈完整，AppleHDA 仍在',
+    tone: 'verified',
   },
   {
-    to: '/intel',
-    kicker: 'INTEL',
-    title: '末代 x86 的余量',
-    desc: '9~10 代开箱可用，12 代以后要 CPUID 伪装，UHD 630 是最后的免驱核显。',
-    badges: ['有条件可用', '≤ 26.7'],
+    os: 'macOS 26 Tahoe (26.0–26.7)',
+    arch: 'x86_64 + arm64e',
+    intel: '支持（末代）',
+    smbios: '仅 4 个机型',
+    stack: '移除 AppleHDA；WhateverGreen 需整体移除',
+    tone: 'conditional',
   },
   {
-    to: '/amd',
-    kicker: 'AMD',
-    title: '补丁换来的性能',
-    desc: 'Vanilla 补丁链最成熟，代价是没有 Hypervisor——虚拟机与容器硬加速全废。',
-    badges: ['有条件可用', '≤ 26.7'],
-  },
-  {
-    to: '/gpu',
-    kicker: 'GPU',
-    title: 'N 卡回来了，但有条件',
-    desc: 'NullMoth 覆盖 16–50 系，能点亮、能跑 Metal，性能却只有 Windows 的零头。',
-    badges: ['实验性支持', 'A 卡免驱'],
-  },
-  {
-    to: '/vm',
-    kicker: 'VIRTUAL',
-    title: '不拆机箱也能跑',
-    desc: 'QEMU/KVM 是过去六年最省事的路，直通一张免驱 A 卡就能回到九成性能。',
-    badges: ['有条件可用'],
-  },
-  {
-    to: '/library',
-    kicker: 'DATA',
-    title: '全部证据，可以查',
-    desc: '硬件矩阵、项目图谱、结论台账、取证纠错，每条都能点回上游来源。',
-    badges: ['可筛选', '可深链'],
+    os: 'macOS 27 Golden Gate',
+    arch: '仅 arm64e',
+    intel: '不支持',
+    smbios: '—',
+    stack: 'Intel 驱动与内核路径移除，无法通过补丁绕过',
+    tone: 'incompatible',
   },
 ];
 
+const count = (fn: (h: (typeof HARDWARE)[number]) => boolean) => HARDWARE.filter(fn).length;
+
 export function HomePage() {
   useDocumentTitle('总览');
+
+  const entries = [
+    {
+      to: '/intel',
+      kicker: 'INTEL',
+      title: '十四代演进',
+      desc: '从 Comet Lake 的末代原生核显，到 Arrow Lake 的异构大小核。CPUID 伪装、拓扑重构与主板 ACPI 是三道门槛。',
+      stat: `${count((h) => h.platform === 'intel')} 条记录`,
+      span: '',
+    },
+    {
+      to: '/amd',
+      kicker: 'AMD',
+      title: '补丁哲学',
+      desc: 'Ryzen 全系可引导，代价写在明面上：没有 Hypervisor，PAT 重映射影响显存带宽与音频稳定性。',
+      stat: `${count((h) => h.platform === 'amd')} 条记录`,
+      span: '',
+    },
+    {
+      to: '/gpu',
+      kicker: 'GPU',
+      title: '生死线',
+      desc: 'AMD 原生防线仍然可靠，Navi 3x 明确无解；NVIDIA 靠第三方驱动点亮，性能只有 Windows 的零头。',
+      stat: `${count((h) => h.category === 'dgpu')} 条独显记录`,
+      span: '',
+    },
+    {
+      to: '/arm',
+      kicker: 'ARM',
+      title: '跨越 Apple Silicon 的高墙',
+      desc: 'UniXNU、Snapintosh、RK3588、ios-sweet 四条路线。按代码公开度、启动阶段与图形加速真实性逐项取证。',
+      stat: `${count((h) => h.platform === 'arm')} 个平台`,
+      span: 'bento--half',
+    },
+    {
+      to: '/virtualization',
+      kicker: 'VIRTUAL',
+      title: '把硬件交给 Hypervisor',
+      desc: 'QEMU/KVM 加 VFIO 直通、Apple Virtualization.framework、TCG 全模拟，三种层级对应三种可用性。',
+      stat: `${PROJECTS.filter((p) => p.category === 'virtualization').length} 个项目`,
+      span: 'bento--half',
+    },
+    {
+      to: '/peripherals',
+      kicker: 'PERIPHERAL',
+      title: '最后一公里',
+      desc: '无线、蓝牙、音频、USB 映射与连续互通——决定这台机器能不能长期服役。',
+      stat: `${count((h) => ['wifi', 'ethernet', 'audio', 'storage'].includes(h.category))} 条记录`,
+      span: '',
+    },
+    {
+      to: '/library',
+      kicker: 'DATA',
+      title: '证据链',
+      desc: '硬件矩阵、项目图谱、失效墓园、取证纠错。每条结论绑定证据 ID 与核验日期。',
+      stat: `${HARDWARE.length} 硬件 · ${PROJECTS.length} 项目`,
+      span: '',
+    },
+    {
+      to: '/generator',
+      kicker: 'ENGINE',
+      title: '可行性评估',
+      desc: '纯函数规则引擎：输入硬件组合，输出判定、阻断原因、补丁清单与证据。',
+      stat: `${CLAIMS.length} 条结论台账`,
+      span: '',
+    },
+  ];
 
   return (
     <>
       <section className="hero">
         <div className="container">
-          <p className="eyebrow">2026 年 10 月 · 全景报告</p>
-          <h1 className="display">
-            x86 定格，
-            <br />
-            ARM 开闸。
-          </h1>
+          <p className="eyebrow">2026 · 非官方 macOS 技术档案</p>
+          <h1 className="hero-title">站在 x86 的终点，审视非官方 macOS 的每一条技术路径。</h1>
           <p className="hero__sub">
-            macOS 27 把 Intel 关在门外，黑苹果的天花板钉死在 26.7。但同一时间，四条 ARM
-            移植路线在跑， N 卡从 16 系到 50 系重新点亮，Intel
-            核显被第三方驱动拽了回来。这是终结，也是换轨。
+            从 macOS 26 Tahoe（26.7）的末代 x86_64 绝唱，到 macOS 27 Golden Gate 彻底移除 Intel
+            代码后的架构断层；从传统 OpenCore 引导、社区逆向驱动，到非 Apple 芯片的 ARM64
+            移植实验。这里不兜售「完美免驱」的都市传说，只记录经过代码与实机取证的技术事实。
           </p>
           <div className="hero__meta">
             <span>数据截止 2026-10-29</span>
-            <span>{PROJECTS.length} 个开源项目取证</span>
-            <span>{HARDWARE.length} 条硬件兼容记录</span>
+            <span>{HARDWARE.length} 条硬件记录</span>
+            <span>{PROJECTS.length} 个开源项目</span>
             <span>{CLAIMS.length} 条结论台账</span>
           </div>
         </div>
@@ -79,89 +126,162 @@ export function HomePage() {
 
       <section className="section section--tight">
         <div className="container">
-          <div className="grid grid--3">
-            <article className="card">
-              <p className="caption">01 / 系统边界</p>
-              <h2 className="h3" style={{ marginTop: 6 }}>
-                26.7 就是终点，没有 27
-              </h2>
-              <p className="card__body" style={{ marginTop: 6 }}>
-                macOS 27 只支持 Apple Silicon，这是架构性排除。Tahoe 只剩 4 个 SMBIOS 可用，OCLP
-                也没有 27 的适配计划。
-              </p>
-              <p className="card__foot">
-                <Link to="/library/claims">C-002 / C-003</Link>
-                <span>官方文档</span>
-              </p>
-            </article>
-            <article className="card">
-              <p className="caption">02 / ARM 现状</p>
-              <h2 className="h3" style={{ marginTop: 6 }}>
-                四条线在跑，两条有代码
-              </h2>
-              <p className="card__body" style={{ marginTop: 6 }}>
-                UniXNU 有仓库有文档，Snapintosh 开源且带 Adreno 加速；RK3588 跑通了 27.2 Beta
-                但零代码；ios-sweet 是反向移植。
-              </p>
-              <p className="card__foot">
-                <Link to="/arm">看四条路线</Link>
-                <span>上游仓库 + 项目方声明</span>
-              </p>
-            </article>
-            <article className="card">
-              <p className="caption">03 / 硬件禁区</p>
-              <h2 className="h3" style={{ marginTop: 6 }}>
-                Navi 3x 与 780M 仍然是墙
-              </h2>
-              <p className="card__body" style={{ marginTop: 6 }}>
-                RX 7900 XTX、7800 XT、Radeon 780M 至今无解。反倒是被官方判死的 N 卡，
-                被第三方驱动救了回来——但只救回一小半。
-              </p>
-              <p className="card__foot">
-                <Link to="/gpu">看显卡矩阵</Link>
-                <span>Dortania</span>
-              </p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section className="section section--alt">
-        <div className="container">
           <div className="stat-row">
             <div className="stat">
               <div className="stat__num">26.7</div>
-              <div className="stat__label">x86 黑苹果的系统上限</div>
+              <div className="stat__label">x86_64 黑苹果的系统上限</div>
             </div>
             <div className="stat">
               <div className="stat__num">4</div>
-              <div className="stat__label">ARM 移植路线（2 条有代码）</div>
+              <div className="stat__label">Tahoe 下可用的 Intel SMBIOS 数量</div>
             </div>
             <div className="stat">
               <div className="stat__num">247</div>
-              <div className="stat__label">NullMoth 覆盖的 NVIDIA PCI ID</div>
+              <div className="stat__label">NullMoth 声明的 NVIDIA PCI ID</div>
             </div>
             <div className="stat">
-              <div className="stat__num">{CORRECTIONS.length}</div>
-              <div className="stat__label">已证伪的流传说法</div>
+              <div className="stat__num">
+                {PROJECTS.filter((p) => p.codeOpen !== 'full').length}
+              </div>
+              <div className="stat__label">代码未完全公开的项目</div>
             </div>
           </div>
         </div>
       </section>
 
       <section className="section">
+        <div className="container">
+          <div className="section__head">
+            <p className="eyebrow">系统边界</p>
+            <h2>三个版本，一条断层</h2>
+            <p className="lead" style={{ marginTop: 12 }}>
+              2026 年所有黑苹果讨论的前提，都写在这三行里。越过 26.7
+              之后，问题不再是「驱动能不能补」，而是架构不再包含你。
+            </p>
+          </div>
+
+          <div className="table-shell">
+            <div className="table-scroll">
+              <table className="data" aria-label="macOS 版本与 x86 支持边界">
+                <thead>
+                  <tr>
+                    <th>系统版本</th>
+                    <th>架构支持</th>
+                    <th>Intel 支持</th>
+                    <th>可用 SMBIOS</th>
+                    <th>驱动栈状态</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {OS_BOUNDARY.map((row) => (
+                    <tr key={row.os}>
+                      <td>
+                        <strong>{row.os}</strong>
+                      </td>
+                      <td className="mono-num">{row.arch}</td>
+                      <td className="nowrap">{row.intel}</td>
+                      <td>{row.smbios}</td>
+                      <td>{row.stack}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="table-caption">
+              <span>依据：Apple 官方支持文档、Dortania Tahoe 指南</span>
+              <Link to="/library/claims">查看 C-001 / C-002 / C-003 的完整证据 →</Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section section--elevated">
+        <div className="container">
+          <div className="section__head">
+            <p className="eyebrow">全景路线</p>
+            <h2>八条路径，各自独立</h2>
+          </div>
+          <div className="bento">
+            {entries.map((e) => (
+              <Link key={e.to} to={e.to} className={`card ${e.span}`} style={{ display: 'block' }}>
+                <span className="eyebrow" style={{ marginBottom: 8 }}>
+                  {e.kicker}
+                </span>
+                <h3 className="card__title" style={{ fontSize: '1.125rem' }}>
+                  {e.title}
+                </h3>
+                <p className="card__verdict">{e.desc}</p>
+                <div className="card__specs">
+                  <span>{e.stat}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <div className="split">
+            <div>
+              <p className="eyebrow">2026 风向标</p>
+              <h2>今年真正改变判断的三件事</h2>
+              <p className="lead" style={{ marginTop: 12 }}>
+                不是新品发布，而是三条让旧结论失效的事实。
+              </p>
+            </div>
+            <div className="stack">
+              <article className="card">
+                <div className="card__head">
+                  <h3 className="card__title">Tahoe 是终点，不是中转站</h3>
+                  <span className="badge badge--incompatible">
+                    <span className="vmark vmark--incompatible" aria-hidden="true" />
+                    硬性阻断
+                  </span>
+                </div>
+                <p className="card__verdict">
+                  macOS 27 不再包含任何 Intel 机型的内核驱动，OCLP 团队也没有 27 的适配计划。
+                  「再等一个补丁」这条经验，在这一代正式失效。
+                </p>
+              </article>
+              <article className="card">
+                <div className="card__head">
+                  <h3 className="card__title">N 卡回来了，但只有十分之一的力气</h3>
+                  <span className="badge badge--experimental">
+                    <span className="vmark vmark--experimental" aria-hidden="true" />
+                    实验性
+                  </span>
+                </div>
+                <p className="card__verdict">
+                  NullMoth 让 Turing 到 Blackwell 全系点亮，代价是双 4K 黑屏、无硬件编解码，
+                  以及同卡在 Windows 上约十倍的帧数差距。能跑，不等于能用。
+                </p>
+              </article>
+              <article className="card">
+                <div className="card__head">
+                  <h3 className="card__title">ARM 移植热，但代码公开的只有两条</h3>
+                  <span className="badge badge--unverified">
+                    <span className="vmark vmark--unverified" aria-hidden="true" />
+                    待核实
+                  </span>
+                </div>
+                <p className="card__verdict">
+                  UniXNU 与 Snapintosh 有仓库、有提交；RK3588 有实机演示但零代码公开。
+                  同一句「跑起来了」，可复现程度差了两个数量级。
+                </p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section section--elevated">
         <div className="container container--text">
-          <p className="eyebrow">2026 大事记</p>
-          <h2 style={{ marginBottom: 8 }}>一个半月，七件事把局面改写</h2>
-          <p className="lead" style={{ marginBottom: 32 }}>
-            从 9 月 macOS 27 推送，到 10 月底 RK3588 跑起 27.2 Beta，节奏比过去三年加起来都快。
-          </p>
-          <div className="timeline">
+          <p className="eyebrow">时间线</p>
+          <h2 style={{ marginBottom: 8 }}>一个半月，七件事改写判断</h2>
+          <div className="timeline" style={{ marginTop: 24 }}>
             {TIMELINE.map((e) => (
-              <div
-                key={e.id}
-                className={`timeline__item${e.major ? ' timeline__item--major' : ''}`}
-              >
+              <div key={e.id} className="timeline__item">
                 <div className="timeline__date">{e.date.slice(5)}</div>
                 <div>
                   <p className="timeline__title">{e.title}</p>
@@ -173,76 +293,18 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="section section--alt">
-        <div className="container">
-          <p className="eyebrow">按平台进</p>
-          <h2 style={{ marginBottom: 24 }}>六个入口，各自独立</h2>
-          <div className="plat-grid">
-            {PLATFORMS.map((p) => (
-              <Link key={p.to} to={p.to} className="plat-card">
-                <span className="plat-card__kicker">{p.kicker}</span>
-                <span className="plat-card__title">{p.title}</span>
-                <span className="plat-card__desc">{p.desc}</span>
-                <span className="plat-card__foot">
-                  {p.badges.map((b) => (
-                    <span key={b} className="badge badge--neutral">
-                      {b}
-                    </span>
-                  ))}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="section section--invert">
-        <div className="container">
-          <div className="split">
-            <div>
-              <p className="eyebrow">判断</p>
-              <h2>现在该不该上车</h2>
-              <p className="lead" style={{ marginTop: 12 }}>
-                把「折腾」和「干活」分开看，答案会清楚很多。
-              </p>
-            </div>
-            <div className="stack">
-              <div className="card" style={{ background: 'transparent' }}>
-                <h3 className="card__title">为了折腾 —— 三年里最好的时候</h3>
-                <p className="card__body">
-                  ARM 侧从零到四条线只用了三年，N 卡与 Intel 核显同时被第三方驱动救活，每天都有新
-                  commit。 等到 2028 年前后安全更新停掉，这批项目会一起凉。
-                </p>
-              </div>
-              <div className="card" style={{ background: 'transparent' }}>
-                <h3 className="card__title">为了干活 —— 别上车</h3>
-                <p className="card__body">
-                  系统定格在 26.7，驱动永远停在 2026 年。没有 FairPlay、没有
-                  AirDrop、没有硬件编解码， Adobe 与 Docker 各有各的坑。同价位一台二手 Mac mini
-                  更省命。
-                </p>
-              </div>
-              <div className="callout">
-                <strong>一条经验：</strong>先查矩阵再买件。Navi 3x、Radeon 780M、Intel Arc
-                这三类，无论谁跟你说「有教程」，都别信。
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="section">
         <div className="container container--text" style={{ textAlign: 'center' }}>
           <h2>先算一遍，再拆机箱</h2>
           <p className="lead" style={{ margin: '12px auto 0' }}>
-            配置生成器会告诉你这套件能不能装、缺什么补丁、以及会失去什么。
+            输入硬件组合，引擎会告诉你结论、阻断原因、必备补丁，以及每一条判定背后的证据。
           </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 24 }}>
-            <Link className="btn btn--primary" to="/builder">
-              打开配置生成器
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 28 }}>
+            <Link className="btn btn--primary" to="/generator">
+              打开评估引擎
             </Link>
             <Link className="btn" to="/library">
-              看完整矩阵
+              浏览证据库
             </Link>
           </div>
         </div>
