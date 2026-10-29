@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>资料库 · 硬件矩阵与项目图谱 | 黑苹果配置全景 2026</title>
+<meta name="description" content="51 条硬件兼容记录、86 个开源项目快照、20 个已死项目与 8 条取证纠错。支持按平台、成熟度、系统版本筛选与深链。">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav__inner">
+    <a class="nav__logo" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="7" y="7" width="10" height="10" rx="2.5"/>
+        <path d="M10 3v3M14 3v3M10 18v3M14 18v3M3 10h3M3 14h3M18 10h3M18 14h3" stroke-linecap="round"/>
+      </svg>
+      黑苹果全景
+    </a>
+    <button class="nav__toggle" aria-expanded="false" aria-label="展开导航"><span></span></button>
+    <nav class="nav__menu">
+      <a class="nav__link" href="index.html">总览</a>
+      <a class="nav__link" href="arm.html">ARM</a>
+      <a class="nav__link" href="intel.html">Intel</a>
+      <a class="nav__link" href="amd.html">AMD</a>
+      <a class="nav__link" href="gpu.html">显卡</a>
+      <a class="nav__link" href="vm.html">虚拟机</a>
+      <a class="nav__link" href="periph.html">外设</a>
+      <a class="nav__link" href="data.html">资料库</a>
+      <a class="nav__cta" href="builder.html">配置生成器</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">资料库</p>
+    <h1>全部数据，可以查</h1>
+    <p class="lead">
+      三个表：硬件能不能装、项目还在不在维护、哪些已经死了。
+      筛选状态会写进 URL，可以直接把链接发给别人。
+    </p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="wrap">
+    <div class="tabs" role="tablist" aria-label="资料库分类">
+      <button class="tab" role="tab" id="tab-btn-matrix" aria-controls="tab-matrix" aria-selected="true">硬件矩阵</button>
+      <button class="tab" role="tab" id="tab-btn-projects" aria-controls="tab-projects" aria-selected="false">项目图谱</button>
+      <button class="tab" role="tab" id="tab-btn-dead" aria-controls="tab-dead" aria-selected="false">已死与纠错</button>
+    </div>
+
+    <!-- ============ Tab 1 硬件矩阵 ============ -->
+    <section class="tabpanel" id="tab-matrix" role="tabpanel" aria-labelledby="tab-btn-matrix">
+      <div class="data-toolbar">
+        <div class="filter">
+          <span class="filter__label">平台</span>
+          <div class="chips" data-filter="plat">
+            <button class="chip" data-value="all" aria-pressed="true">全部</button>
+            <button class="chip" data-value="Intel" aria-pressed="false">Intel</button>
+            <button class="chip" data-value="AMD" aria-pressed="false">AMD</button>
+            <button class="chip" data-value="NVIDIA" aria-pressed="false">NVIDIA</button>
+            <button class="chip" data-value="外设" aria-pressed="false">外设</button>
+            <button class="chip" data-value="ARM" aria-pressed="false">ARM</button>
+            <button class="chip" data-value="系统" aria-pressed="false">系统</button>
+          </div>
+        </div>
+        <div class="filter">
+          <span class="filter__label">成熟度</span>
+          <div class="chips" data-filter="level">
+            <button class="chip" data-value="all" aria-pressed="true">全部</button>
+            <button class="chip" data-value="ok" aria-pressed="false">开箱可用</button>
+            <button class="chip" data-value="patch" aria-pressed="false">需补丁</button>
+            <button class="chip" data-value="kext" aria-pressed="false">需 kext</button>
+            <button class="chip" data-value="exp" aria-pressed="false">实验</button>
+            <button class="chip" data-value="partial" aria-pressed="false">部分可用</button>
+            <button class="chip" data-value="none" aria-pressed="false">无解</button>
+          </div>
+        </div>
+        <span class="filter__count" id="count-matrix"></span>
+      </div>
+
+      <div class="legend">
+        <span><i class="ok"></i>开箱可用</span>
+        <span><i class="patch"></i>需补丁 / 需 kext</span>
+        <span><i class="exp"></i>实验性</span>
+        <span><i class="partial"></i>部分可用</span>
+        <span><i class="none"></i>无解</span>
+        <button class="btn btn--quiet" id="copy-matrix" style="margin-left:auto;padding:4px 12px">复制当前筛选链接</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>硬件</th>
+              <th>类型</th>
+              <th>平台</th>
+              <th>状态</th>
+              <th>系统上限</th>
+              <th>备注</th>
+            </tr>
+          </thead>
+          <tbody id="body-matrix"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="empty-matrix" hidden>当前筛选没有条目，试试放宽条件。</p>
+      <p class="table-note">
+        状态含义：<strong>开箱可用</strong>=不用改任何东西；<strong>需补丁</strong>=要改 config.plist 或加 kext；
+        <strong>实验</strong>=有代码但未成熟，随时可能坏；<strong>无解</strong>=目前没有任何可用方案。
+      </p>
+    </section>
+
+    <!-- ============ Tab 2 项目图谱 ============ -->
+    <section class="tabpanel" id="tab-projects" role="tabpanel" aria-labelledby="tab-btn-projects" hidden>
+      <div class="data-toolbar">
+        <div class="filter">
+          <span class="filter__label">类别</span>
+          <div class="chips" data-filter="cat">
+            <button class="chip" data-value="all" aria-pressed="true">全部</button>
+            <button class="chip" data-value="引导器" aria-pressed="false">引导器</button>
+            <button class="chip" data-value="核心 kext" aria-pressed="false">核心 kext</button>
+            <button class="chip" data-value="显卡" aria-pressed="false">显卡</button>
+            <button class="chip" data-value="无线" aria-pressed="false">无线</button>
+            <button class="chip" data-value="外设驱动" aria-pressed="false">外设驱动</button>
+            <button class="chip" data-value="工具链" aria-pressed="false">工具链</button>
+            <button class="chip" data-value="AMD" aria-pressed="false">AMD</button>
+            <button class="chip" data-value="ARM 移植" aria-pressed="false">ARM 移植</button>
+            <button class="chip" data-value="中文社区" aria-pressed="false">中文社区</button>
+            <button class="chip" data-value="虚拟机" aria-pressed="false">虚拟机</button>
+          </div>
+        </div>
+        <div class="filter">
+          <span class="filter__label">状态</span>
+          <div class="chips" data-filter="status">
+            <button class="chip" data-value="all" aria-pressed="true">全部</button>
+            <button class="chip" data-value="active" aria-pressed="false">活跃</button>
+            <button class="chip" data-value="slow" aria-pressed="false">放缓</button>
+            <button class="chip" data-value="stale" aria-pressed="false">停滞</button>
+            <button class="chip" data-value="dead" aria-pressed="false">已死</button>
+          </div>
+        </div>
+        <span class="filter__count" id="count-projects"></span>
+      </div>
+
+      <div class="legend">
+        <span>star 与最后提交为 2026-10-29 的 GitHub API 快照</span>
+        <button class="btn btn--quiet" id="copy-projects" style="margin-left:auto;padding:4px 12px">复制当前筛选链接</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>项目</th>
+              <th>仓库</th>
+              <th class="num">★</th>
+              <th>最后提交</th>
+              <th>状态</th>
+              <th>作用</th>
+            </tr>
+          </thead>
+          <tbody id="body-projects"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="empty-projects" hidden>当前筛选没有条目，试试放宽条件。</p>
+      <p class="table-note">
+        状态判定口径：活跃 ≤3 个月有提交；放缓 3–12 个月；停滞 12–18 个月；已死 &gt;18 个月或已归档。
+        2026 年新建的项目在「作用」列会注明建库时间。
+      </p>
+    </section>
+
+    <!-- ============ Tab 3 已死与纠错 ============ -->
+    <section class="tabpanel" id="tab-dead" role="tabpanel" aria-labelledby="tab-btn-dead" hidden>
+      <h2 style="margin-bottom:8px">已经死掉的项目</h2>
+      <p class="small muted" style="margin-bottom:24px">
+        归档或超过 18 个月没有提交。它们大多不是「失败」，而是被更好的方案取代——
+        看它们为什么死，比看它们怎么用更有信息量。
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>项目</th>
+              <th>仓库</th>
+              <th class="num">★</th>
+              <th>最后更新</th>
+              <th>为什么死了</th>
+            </tr>
+          </thead>
+          <tbody id="body-dead"></tbody>
+        </table>
+      </div>
+
+      <h2 style="margin:56px 0 8px">取证纠错</h2>
+      <p class="small muted" style="margin-bottom:24px">
+        下面这些说法在中文互联网上流传很广，但都能用 GitHub API 或官方文档直接证伪。
+        收录在这里，是因为它们经常出现在教程和视频里。
+      </p>
+      <div class="correction" id="corrections"></div>
+    </section>
+  </div>
+</section>
+
+<!-- ============ 来源 ============ -->
+<section class="section section--tight">
+  <div class="wrap wrap--text">
+    <div class="sources reveal">
+      <p class="caption">数据口径</p>
+      <ol>
+        <li>star、最后提交、归档状态均来自 <span class="mono">api.github.com</span>，2026-10-29 抓取，未做估算或补全。</li>
+        <li>状态判定用 <span class="mono">pushed_at</span>，对 itlwm 额外用 commits 接口校验真实 commit 日期，避免被空推送误导。</li>
+        <li>硬件兼容结论来自 Dortania 指南、各项目 README 与中文社区实测帖的交叉核对。</li>
+        <li>标「无解」的条目表示截至 2026-10-29 没有任何公开可用方案，不代表永远不会变。</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <h4>关于本站</h4>
+        <p class="small" style="line-height:1.8">
+          一份关于 2026 年 10 月黑苹果现状的静态档案。所有数据来自 GitHub API 快照、
+          项目官方 README 与中文技术媒体的交叉核对，每条结论都标了来源与时间。
+        </p>
+      </div>
+      <div>
+        <h4>平台</h4>
+        <ul>
+          <li><a href="arm.html">ARM 移植</a></li>
+          <li><a href="intel.html">Intel 平台</a></li>
+          <li><a href="amd.html">AMD 平台</a></li>
+          <li><a href="gpu.html">显卡</a></li>
+          <li><a href="vm.html">虚拟机 / KVM</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>资料</h4>
+        <ul>
+          <li><a href="data.html">硬件矩阵</a></li>
+          <li><a href="data.html#tab=projects">项目图谱</a></li>
+          <li><a href="data.html#tab=dead">已死项目</a></li>
+          <li><a href="data.html#tab=dead">取证纠错</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>声明</h4>
+        <ul>
+          <li>数据截止 2026-10-29</li>
+          <li>star 数为当日快照</li>
+          <li>在非 Apple 硬件运行 macOS 可能违反 Apple 软件许可协议</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>黑苹果配置全景 · 2026 年 10 月版</span>
+      <span>静态站点，无框架、无 CDN、无追踪</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/data/hw.js"></script>
+<script src="assets/data/projects.js"></script>
+<script src="assets/js/nav.js"></script>
+<script src="assets/js/matrix.js"></script>
+</body>
+</html>

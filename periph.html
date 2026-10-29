@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>外设 · 装完之后才是坑 | 黑苹果配置全景 2026</title>
+<meta name="description" content="黑苹果外设兼容：无线四条路线（BCM / itlwm / RTW89 / MT7922）、Tahoe 音频三条路线、I225 与 I226、USB 映射、睡眠与 iServices。">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav__inner">
+    <a class="nav__logo" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="7" y="7" width="10" height="10" rx="2.5"/>
+        <path d="M10 3v3M14 3v3M10 18v3M14 18v3M3 10h3M3 14h3M18 10h3M18 14h3" stroke-linecap="round"/>
+      </svg>
+      黑苹果全景
+    </a>
+    <button class="nav__toggle" aria-expanded="false" aria-label="展开导航"><span></span></button>
+    <nav class="nav__menu">
+      <a class="nav__link" href="index.html">总览</a>
+      <a class="nav__link" href="arm.html">ARM</a>
+      <a class="nav__link" href="intel.html">Intel</a>
+      <a class="nav__link" href="amd.html">AMD</a>
+      <a class="nav__link" href="gpu.html">显卡</a>
+      <a class="nav__link" href="vm.html">虚拟机</a>
+      <a class="nav__link" href="periph.html">外设</a>
+      <a class="nav__link" href="data.html">资料库</a>
+      <a class="nav__cta" href="builder.html">配置生成器</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">外设</p>
+    <h1>装完之后才是坑</h1>
+    <p class="lead">
+      显卡决定了能不能进桌面，外设决定了能不能用下去。2026 年最麻烦的两件事都在这一层：
+      Tahoe 删掉了 AppleHDA，Broadcom 老卡的原生驱动也早就没了。
+    </p>
+  </div>
+</section>
+
+<!-- ============ 无线 ============ -->
+<section class="section section--tight">
+  <div class="wrap">
+    <p class="eyebrow reveal">无线</p>
+    <h2 class="reveal" style="margin-bottom:32px">四条路线，没有一条是全能的</h2>
+
+    <div class="table-wrap reveal">
+      <table>
+        <thead>
+          <tr>
+            <th>方案</th>
+            <th>代表型号</th>
+            <th>系统上限</th>
+            <th>生态功能</th>
+            <th>代价</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>AppleBCMWLANCompanion</strong><br><span class="mono faint">151 ★ · 1.1.0</span></td>
+            <td>BCM943602BAED / CDP / CS、DW1830；BCM94350ZAE、DW1820A</td>
+            <td>26.0 – 26.1</td>
+            <td><span class="badge badge--ok">AirDrop / Handoff 全有</span></td>
+            <td>必须开 VT-d；AMD 平台要加 <span class="code-inline">bcmc-disable-io-mapper</span>，代价是内存占用上升、网速下降</td>
+          </tr>
+          <tr>
+            <td><strong>BCM94360 + OCLP 根补丁</strong></td>
+            <td>BCM94360CD / CS2 / 2CS</td>
+            <td>26.7</td>
+            <td><span class="badge badge--ok">功能最全</span></td>
+            <td>每次 26.x 小版本更新都要重打补丁</td>
+          </tr>
+          <tr>
+            <td><strong>laobamac/itlwm</strong><br><span class="mono faint">181 ★ · v2.4.0-alpha</span></td>
+            <td>AX200 / AX210 / AX211</td>
+            <td>15.2+ / 26 原生</td>
+            <td><span class="badge badge--none">AirDrop 永久无解</span></td>
+            <td>不需要根补丁；蓝牙仍不稳；HE 需显式 boot-arg</td>
+          </tr>
+          <tr>
+            <td><strong>AirportRTW89</strong><br><span class="mono faint">13 ★ · 2026-10-21</span></td>
+            <td>RTL8922AE（Wi-Fi 7）/ 8852 系</td>
+            <td>Ventura → 26</td>
+            <td><span class="badge badge--none">无 AWDL</span></td>
+            <td>需恢复 IOSkywalkFamily 与 IO80211FamilyLegacy；实测 200Mbps 双向</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid grid--2" style="margin-top:32px">
+      <div class="card reveal">
+        <p class="card__title">怎么选</p>
+        <ul class="ticks card__body">
+          <li>要 AirDrop / 接力：只能走 Broadcom，接受每次更新重打补丁</li>
+          <li>只要上网：AX210 + laobamac/itlwm，最省事</li>
+          <li>AMD 平台 + 博通卡：用 Companion 1.1.0 的绕过参数，别指望满速</li>
+        </ul>
+      </div>
+      <div class="card reveal">
+        <p class="card__title">一个反直觉的事实</p>
+        <p class="card__body">
+          itlwm 主线（7129 ★）已经停更 28 个月，最后一个 commit 停在 2024-06。
+          2026 年真正在维护 Intel 无线的，是一个 181 star 的中文作者分支。
+          项目热度与项目活性，在这里完全是两回事。
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 音频 ============ -->
+<section class="section section--dark">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:40px">
+      <p class="eyebrow">音频</p>
+      <h2 style="max-width:22em">Tahoe 删了 AppleHDA，所有人被迫重选方案</h2>
+      <p class="lead" style="max-width:44em;margin-top:16px">
+        macOS 26 不再自带 AppleHDA.kext，AppleALC 直接失效。现在有三条路，
+        按「改动系统的程度」从轻到重排列。
+      </p>
+    </div>
+
+    <div class="grid grid--3">
+      <div class="card reveal" style="background:transparent">
+        <p class="card__title">① SimpleHDA <small>1.0.0 · 93 ★</small></p>
+        <p class="card__body">
+          用 Lilu 插件 + OpenCore 注入的方式恢复原生 AppleHDA，
+          <strong>不改系统卷、不重建 KC</strong>，现有的 AppleALC layout 可以继续用。
+          需要 Lilu ≥ 1.7.1 与 <span class="code-inline">keepsyms=1</span>。
+        </p>
+        <p class="card__foot">
+          <span class="badge badge--ok">推荐</span>
+          <span>2026-10-13</span>
+        </p>
+      </div>
+      <div class="card reveal" style="background:transparent">
+        <p class="card__title">② MyKextInstaller <small>v1.8</small></p>
+        <p class="card__body">
+          从 KDK 里把 AppleHDA 重新注入系统卷。最初就是为 Tahoe Beta 2 写的，
+          现在成了通用 kext 注入器。社区里有把系统搞坏、必须进 Recovery 修的案例。
+        </p>
+        <p class="card__foot">
+          <span class="badge badge--patch">有风险</span>
+        </p>
+      </div>
+      <div class="card reveal" style="background:transparent">
+        <p class="card__title">③ VoodooHDA <small>3.1.x</small></p>
+        <p class="card__body">
+          最老的方案，Tahoe 上又活了过来。需要把 <span class="code-inline">csr-active-config</span>
+          设成 <span class="code-inline">03000000</span>。音质与音量控制不如原生，但最省事。
+        </p>
+        <p class="card__foot">
+          <span class="badge badge--partial">保底</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="callout reveal" style="margin-top:32px">
+      <strong>不受影响的部分：</strong>HDMI / DisplayPort / USB 音频。它们不走 AppleHDA，
+      所以外接显示器出声、USB 声卡、蓝牙耳机（如果蓝牙能驱动）都正常。
+    </div>
+  </div>
+</section>
+
+<!-- ============ 有线 / USB ============ -->
+<section class="section">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">有线与接口</p>
+        <h2>网卡比无线简单得多</h2>
+        <p class="lead" style="margin-top:16px">
+          有线几乎不是问题，除了 Intel 2.5G 那两代需要区分：
+          I225-V 在 Tahoe 是原生支持，I226-V 还得靠第三方 kext。
+        </p>
+      </div>
+      <div class="reveal">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>芯片</th>
+                <th>状态</th>
+                <th>方案</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Intel I225-V</td>
+                <td><span class="badge badge--ok">原生</span></td>
+                <td>Tahoe 直接支持，无需 kext</td>
+              </tr>
+              <tr>
+                <td>Intel I226-V</td>
+                <td><span class="badge badge--patch">需 kext</span></td>
+                <td>AppleIGC（SongXiaoXi，168 ★）；不加会插网线就重启</td>
+              </tr>
+              <tr>
+                <td>Realtek RTL8125</td>
+                <td><span class="badge badge--patch">需 kext</span></td>
+                <td>LucyRTL8125 或 RTL8111 驱动</td>
+              </tr>
+              <tr>
+                <td>Realtek RTL8111 / 8168</td>
+                <td><span class="badge badge--patch">需 kext</span></td>
+                <td>Mieze/RTL8111_driver_for_OS_X（注意仓库名）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ USB / 睡眠 / iServices ============ -->
+<section class="section section--sunken">
+  <div class="wrap">
+    <div class="grid grid--3">
+      <div class="card card--pad-lg reveal">
+        <p class="card__title">USB 映射</p>
+        <p class="card__body">
+          必须做，否则会出现「USB 3.0 口只跑 2.0」「插拔后睡眠失效」这类玄学问题。
+          工具从 USBToolBox（1472 ★，2023-10 后停更）转向 corpnewt/USBMap（1261 ★）。
+        </p>
+        <p class="card__body" style="margin-top:12px">
+          OpenCore 1.0.7 修了 <span class="code-inline">XhciPortLimit</span> 在 Tahoe 上的兼容问题，
+          但仍建议用端口映射而不是靠 quirk 硬顶。
+        </p>
+      </div>
+      <div class="card card--pad-lg reveal">
+        <p class="card__title">睡眠与唤醒</p>
+        <p class="card__body">
+          标准三件套：SSDT-PLUG（CPU 电源管理）、SSDT-EC（嵌入式控制器）、
+          SSDT-USBX（USB 供电表），配合 <span class="code-inline">XcpmExtraMsrs</span>。
+        </p>
+        <p class="card__body" style="margin-top:12px">
+          AMD 平台偶发不睡；ARM 侧（Snapintosh）睡眠完全不支持，属于未实现而非配置问题。
+        </p>
+      </div>
+      <div class="card card--pad-lg reveal">
+        <p class="card__title">iServices 三码</p>
+        <p class="card__body">
+          iMessage / FaceTime 需要 SystemSerialNumber、MLB、ROM 三码齐全，
+          且网卡必须是内建的 en0，SMBIOS 要与机型匹配。
+        </p>
+        <p class="card__body" style="margin-top:12px">
+          2026-06 Apple 上线了异常检测，一批黑苹果账号被误锁。
+          建议用小号，关掉 iCloud 同步再试。
+        </p>
+        <p class="card__foot">
+          <span class="badge badge--partial">有封号风险</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 来源 ============ -->
+<section class="section section--tight">
+  <div class="wrap wrap--text">
+    <div class="sources reveal">
+      <p class="caption">来源（访问于 2026-10-29）</p>
+      <ol>
+        <li>0xFireWolf/AppleBCMWLANCompanion 1.1.0 — 最后推送 2025-11-21</li>
+        <li>laobamac/itlwm v2.4.0-alpha — 2026-10-02；laobamac/SimpleHDA 1.0.0 — 2026-10-13</li>
+        <li>achcyano/AirportRTW89 — 2026-10-21（实测 200Mbps 双向）</li>
+        <li>SongXiaoXi/AppleIGC — 2026-09-17；Mieze/RTL8111_driver_for_OS_X — 2025-12-24</li>
+        <li>Dortania Tahoe 页（I225-V 原生、AppleHDA 移除、-ibtcompatbeta）</li>
+        <li>远景论坛与黑苹果星球的 I225 / 音频方案讨论 — 2026 年</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <h4>关于本站</h4>
+        <p class="small" style="line-height:1.8">
+          一份关于 2026 年 10 月黑苹果现状的静态档案。所有数据来自 GitHub API 快照、
+          项目官方 README 与中文技术媒体的交叉核对，每条结论都标了来源与时间。
+        </p>
+      </div>
+      <div>
+        <h4>平台</h4>
+        <ul>
+          <li><a href="arm.html">ARM 移植</a></li>
+          <li><a href="intel.html">Intel 平台</a></li>
+          <li><a href="amd.html">AMD 平台</a></li>
+          <li><a href="gpu.html">显卡</a></li>
+          <li><a href="vm.html">虚拟机 / KVM</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>资料</h4>
+        <ul>
+          <li><a href="data.html">硬件矩阵</a></li>
+          <li><a href="data.html#tab=projects">项目图谱</a></li>
+          <li><a href="data.html#tab=dead">已死项目</a></li>
+          <li><a href="data.html#tab=dead">取证纠错</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>声明</h4>
+        <ul>
+          <li>数据截止 2026-10-29</li>
+          <li>star 数为当日快照</li>
+          <li>在非 Apple 硬件运行 macOS 可能违反 Apple 软件许可协议</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>黑苹果配置全景 · 2026 年 10 月版</span>
+      <span>静态站点，无框架、无 CDN、无追踪</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/nav.js"></script>
+</body>
+</html>

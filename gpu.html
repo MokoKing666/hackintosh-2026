@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>显卡 · N 卡回来了，但有条件 | 黑苹果配置全景 2026</title>
+<meta name="description" content="2026 显卡全景：NullMoth 第三方驱动让 GTX 16 到 RTX 50 重新点亮，Intel Xe 有两条实验线，AMD Polaris 到 Navi 2x 仍免驱，Navi 3x 无解。">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav__inner">
+    <a class="nav__logo" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="7" y="7" width="10" height="10" rx="2.5"/>
+        <path d="M10 3v3M14 3v3M10 18v3M14 18v3M3 10h3M3 14h3M18 10h3M18 14h3" stroke-linecap="round"/>
+      </svg>
+      黑苹果全景
+    </a>
+    <button class="nav__toggle" aria-expanded="false" aria-label="展开导航"><span></span></button>
+    <nav class="nav__menu">
+      <a class="nav__link" href="index.html">总览</a>
+      <a class="nav__link" href="arm.html">ARM</a>
+      <a class="nav__link" href="intel.html">Intel</a>
+      <a class="nav__link" href="amd.html">AMD</a>
+      <a class="nav__link" href="gpu.html">显卡</a>
+      <a class="nav__link" href="vm.html">虚拟机</a>
+      <a class="nav__link" href="periph.html">外设</a>
+      <a class="nav__link" href="data.html">资料库</a>
+      <a class="nav__cta" href="builder.html">配置生成器</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">显卡</p>
+    <h1>N 卡回来了，<br>但只有十分之一的力气</h1>
+    <p class="lead">
+      2026 年最意外的事：被 Apple 判死七年的 NVIDIA，被一个独立开发者用三周时间救活了。
+      GTX 16 到 RTX 50 全系能点亮、能跑 Metal——只是性能只有 Windows 的十分之一。
+    </p>
+  </div>
+</section>
+
+<!-- ============ NullMoth ============ -->
+<section class="section section--dark">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:40px">
+      <p class="eyebrow">主角</p>
+      <h2 style="max-width:20em">NullMoth：把 Metal 架在 NVIDIA 的开源内核模块上</h2>
+      <p class="lead" style="max-width:44em;margin-top:16px">
+        它不是重写驱动，而是绕路：让 Metal 应用以为自己在跟 Apple 的驱动说话，
+        中间一层翻译器把 Apple 的 AIR 中间表示转成 SPIR-V，交给 Mesa 的 NVK，
+        再由 NVIDIA 开源的 r610 内核模块落到硬件上。
+      </p>
+    </div>
+
+    <figure class="figure reveal">
+      <svg viewBox="0 0 720 316" role="img" aria-label="NullMoth 驱动的五层转换链路">
+        <g font-family="MiSans, sans-serif">
+          <rect x="14" y="24" width="126" height="74" rx="10" fill="#1c1c22" stroke="#3a3a44"/>
+          <text x="77" y="52" font-size="12" font-weight="600" fill="#f5f5f7" text-anchor="middle">Metal 应用</text>
+          <text x="77" y="72" font-size="10.5" fill="#a1a1a6" text-anchor="middle">DaVinci / 游戏</text>
+          <text x="77" y="87" font-size="10.5" fill="#86868b" text-anchor="middle">Blender</text>
+
+          <rect x="158" y="24" width="126" height="74" rx="10" fill="#1c1c22" stroke="#3a3a44"/>
+          <text x="221" y="48" font-size="11.5" font-weight="600" fill="#f5f5f7" text-anchor="middle">NVMTLDriver</text>
+          <text x="221" y="65" font-size="10.5" fill="#a1a1a6" text-anchor="middle">.bundle</text>
+          <text x="221" y="82" font-size="10.5" fill="#86868b" text-anchor="middle">Metal 驱动插件</text>
+
+          <rect x="302" y="24" width="140" height="74" rx="10" fill="#241f33" stroke="#4b3d73"/>
+          <text x="372" y="48" font-size="11.5" font-weight="600" fill="#f5f5f7" text-anchor="middle">AIR → SPIR-V</text>
+          <text x="372" y="65" font-size="10.5" fill="#a1a1a6" text-anchor="middle">着色器翻译器</text>
+          <text x="372" y="82" font-size="10.5" fill="#86868b" text-anchor="middle">Apple 中间表示 → Vulkan</text>
+
+          <rect x="460" y="24" width="112" height="74" rx="10" fill="#1c1c22" stroke="#3a3a44"/>
+          <text x="516" y="52" font-size="11.5" font-weight="600" fill="#f5f5f7" text-anchor="middle">NVK (Mesa)</text>
+          <text x="516" y="72" font-size="10.5" fill="#a1a1a6" text-anchor="middle">用户态 Vulkan</text>
+          <text x="516" y="87" font-size="10.5" fill="#86868b" text-anchor="middle">驱动</text>
+
+          <rect x="590" y="24" width="116" height="74" rx="10" fill="#16241b" stroke="#2f5c3f"/>
+          <text x="648" y="48" font-size="11" font-weight="600" fill="#f5f5f7" text-anchor="middle">NVRM / NVAccel</text>
+          <text x="648" y="65" font-size="10.5" fill="#a1a1a6" text-anchor="middle">r610 开源模块</text>
+          <text x="648" y="82" font-size="10.5" fill="#86868b" text-anchor="middle">GSP 615.78.08</text>
+
+          <g stroke="#5a5a66" stroke-width="1.4" fill="none">
+            <path d="M142 61 H154"/><path d="M148 57 L156 61 L148 65"/>
+            <path d="M286 61 H298"/><path d="M292 57 L300 61 L292 65"/>
+            <path d="M444 61 H456"/><path d="M450 57 L458 61 L450 65"/>
+            <path d="M574 61 H586"/><path d="M580 57 L588 61 L580 65"/>
+          </g>
+
+          <rect x="14" y="120" width="692" height="80" rx="10" fill="#16161a" stroke="#2a2a32"/>
+          <text x="34" y="144" font-size="11.5" font-weight="600" fill="#f5f5f7">内核侧</text>
+          <text x="34" y="166" font-size="10.5" fill="#a1a1a6">NVRM · NVAccel · NVRMFB · NVRMAGDC —— 来自 NVIDIA 开源内核模块 r610，配 GSP 固件 615.78.08。</text>
+          <text x="34" y="185" font-size="10.5" fill="#a1a1a6">同时用 Kernel → Block 排除系统自带的 IONDRVSupport，避免两套驱动抢同一块卡。</text>
+
+          <rect x="14" y="216" width="338" height="74" rx="10" fill="#16161a" stroke="#2a2a32"/>
+          <text x="34" y="240" font-size="11.5" font-weight="600" fill="#f5f5f7">必须满足的硬件前提</text>
+          <text x="34" y="260" font-size="10.5" fill="#a1a1a6">ReBAR + Above 4G 必须开启；</text>
+          <text x="34" y="278" font-size="10.5" fill="#a1a1a6">BAR 只尝试 8G / 4G，不回退到更小尺寸。</text>
+
+          <rect x="368" y="216" width="338" height="74" rx="10" fill="#2a1f14" stroke="#5c4326"/>
+          <text x="388" y="240" font-size="11.5" font-weight="600" fill="#f5f5f7">已知硬伤</text>
+          <text x="388" y="260" font-size="10.5" fill="#a1a1a6">双 4K 只剩鼠标（BAR1 停在 256MB）；</text>
+          <text x="388" y="278" font-size="10.5" fill="#a1a1a6">无硬件编解码；无 Optimus 切换。</text>
+        </g>
+      </svg>
+      <figcaption>五层链路，每一层都是「翻译」而不是「原生支持」。这也是为什么它能覆盖 247 个 PCI ID，却只有一台卡被真正物理验证过。</figcaption>
+    </figure>
+
+    <div class="grid grid--2" style="margin-top:40px">
+      <div class="card reveal" style="background:transparent">
+        <p class="card__title">能装什么</p>
+        <p class="card__body">
+          Turing 及更新：GTX 1650 / 1660 系、RTX 20 / 30 / 40 / 50 全系、TITAN RTX、
+          Quadro RTX 与 T400–T1200、RTX A 系。设备表共 247 个 PCI ID，取自 NVIDIA 615.78.08 驱动。
+        </p>
+        <p class="card__body" style="margin-top:12px">
+          系统侧：驱动本体支持 macOS 15.5 起与 26 Tahoe；但配套的一键安装器 1401 目前把系统锁在 15 Sequoia。
+          想上 Tahoe 要手动装，并注意 Tahoe 黑屏的 bug 在 v1.14 才修。
+        </p>
+      </div>
+      <div class="card reveal" style="background:transparent">
+        <p class="card__title">要改什么</p>
+        <pre style="margin-top:8px"><code>boot-args:
+  nvfb=1 nvaccel=1 nvfbheads=4
+  -nvkmsnosmooth amfi=0x80
+  amfi_get_out_of_my_way=0x1
+  ipc_control_port_options=0
+
+csr-active-config   = 430A0000
+SecureBootModel     = Disabled
+Kernel → Block      = IONDRVSupport
+kext                = Lilu + AMFIPass
+装 WhateverGreen 时 加 gfxrst=4</code></pre>
+      </div>
+    </div>
+
+    <div class="reveal" style="margin-top:40px">
+      <p class="caption" style="margin-bottom:16px">性能实测（社区数据，非官方基准）</p>
+      <div class="bars">
+        <div class="bar">
+          <span>RTX 3060 · Windows</span>
+          <span class="bar__track"><span class="bar__fill" style="width:100%"></span></span>
+          <span class="bar__val">700 帧</span>
+        </div>
+        <div class="bar bar--accent">
+          <span>RTX 3060 · macOS</span>
+          <span class="bar__track"><span class="bar__fill" style="width:9%"></span></span>
+          <span class="bar__val">60 帧</span>
+        </div>
+      </div>
+      <p class="small" style="margin-top:16px;color:#a1a1a6">
+        同一台机器、同一个 Minecraft 整合包。另有多份反馈：4K 与 1080p 能到 160Hz，
+        1440p 只有 60 帧；Geekbench Metal 跑分超过 90000，媒体表述为「约等于标准版 M1」，
+        但这个数字与官方基准口径不一致，只能当参考。
+      </p>
+    </div>
+
+    <div class="callout callout--danger reveal" style="margin-top:32px">
+      <strong>别当生产力用。</strong>没有硬件编解码，YouTube 高码率视频会吃满 CPU，达芬奇直接报错；
+      双 4K 会黑屏；HDMI 音频针脚还在修；安全研究者已经在这套驱动里挖出过几处漏洞，
+      开发者随后修了一轮。能跑，不等于可靠。
+    </div>
+  </div>
+</section>
+
+<!-- ============ 官方结局 ============ -->
+<section class="section">
+  <div class="wrap wrap--text">
+    <p class="eyebrow reveal">官方线</p>
+    <h2 class="reveal">Apple 那边的四代结局</h2>
+    <p class="lead reveal" style="margin:16px 0 40px">
+      第三方驱动是补救，不是翻案。按 Apple 自己的支持线，N 卡在 macOS 上的历史是这样断掉的。
+    </p>
+
+    <div class="timeline reveal">
+      <div class="timeline__item">
+        <div class="timeline__date">≤ 10.13.6</div>
+        <div>
+          <p class="timeline__title">Kepler / Maxwell / Pascal 都还能用</p>
+          <p class="timeline__desc">靠 NVIDIA 的 Web Driver，GTX 10 系在 High Sierra 上是完整可用的。</p>
+        </div>
+      </div>
+      <div class="timeline__item timeline__item--major">
+        <div class="timeline__date">10.14</div>
+        <div>
+          <p class="timeline__title">Mojave 起 Web Driver 断绝</p>
+          <p class="timeline__desc">NVIDIA 未再发布新驱动。GTX 10 系从此停在 High Sierra，往后只能靠 OCLP 打补丁点亮，没有 Metal。</p>
+        </div>
+      </div>
+      <div class="timeline__item">
+        <div class="timeline__date">11</div>
+        <div>
+          <p class="timeline__title">Kepler 被移出内核（Monterey beta 7 完成）</p>
+          <p class="timeline__desc">GTX 680 / 780 / TITAN 这一代反而活得久，OCLP 补丁能带到 Sequoia 15，并且保留 Metal。</p>
+        </div>
+      </div>
+      <div class="timeline__item">
+        <div class="timeline__date">12 – 26</div>
+        <div>
+          <p class="timeline__title">Turing / Ampere / Ada 官方「None」</p>
+          <p class="timeline__desc">Dortania 的显卡指南里，这一栏长期写着 Highest Supported OS: None。直到 2026-10 才被第三方改写。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AMD 免驱 ============ -->
+<section class="section section--sunken">
+  <div class="wrap">
+    <p class="eyebrow reveal">A 卡</p>
+    <h2 class="reveal" style="margin-bottom:32px">AMD 仍是免驱主力，但上限卡在 Navi 2x</h2>
+
+    <div class="table-wrap reveal">
+      <table>
+        <thead>
+          <tr>
+            <th>型号</th>
+            <th>架构</th>
+            <th>状态</th>
+            <th>需要的参数 / kext</th>
+            <th>备注</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>RX 570 / 580</td>
+            <td>Polaris</td>
+            <td><span class="badge badge--ok">免驱</span></td>
+            <td>—</td>
+            <td>只有 Metal 2，无 Metal 3；避开 XFX / PowerColor / HIS / VisionTek</td>
+          </tr>
+          <tr>
+            <td>RX 5700 / 5700 XT</td>
+            <td>Navi 10</td>
+            <td><span class="badge badge--ok">免驱</span></td>
+            <td><span class="code-inline">agdpmod=pikera</span></td>
+            <td>不加参数容易黑屏</td>
+          </tr>
+          <tr>
+            <td>RX 6600 / 6600 XT</td>
+            <td>Navi 23</td>
+            <td><span class="badge badge--ok">免驱</span></td>
+            <td><span class="code-inline">agdpmod=pikera</span></td>
+            <td>性价比最高的选择</td>
+          </tr>
+          <tr>
+            <td>RX 6800 XT / 6900 XT</td>
+            <td>Navi 21</td>
+            <td><span class="badge badge--ok">免驱</span></td>
+            <td><span class="code-inline">agdpmod=pikera</span></td>
+            <td>6950 XT 需伪装成 6900 XT</td>
+          </tr>
+          <tr>
+            <td>RX 6700 / 6750</td>
+            <td>Navi 22</td>
+            <td><span class="badge badge--patch">需 kext</span></td>
+            <td>NootRX.kext</td>
+            <td>Apple 从未支持这一档</td>
+          </tr>
+          <tr>
+            <td>RX 7600 / 7800 XT / 7900 XTX</td>
+            <td>Navi 3x</td>
+            <td><span class="badge badge--none">无解</span></td>
+            <td>—</td>
+            <td>Dortania：Apple 不再产 Intel Mac，未来几乎不可能加入</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">
+      Tahoe 特别注意：WhateverGreen 在 macOS 26 上会引发 panic，官方建议整个移除，
+      <span class="code-inline">agdpmod=pikera</span> 改用手工 Kernel → Patch 注入。
+    </p>
+  </div>
+</section>
+
+<!-- ============ Intel Xe 简述 ============ -->
+<section class="section">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">Intel 核显</p>
+        <h2>两条实验线，一条为旧架构，一条为新架构</h2>
+        <p class="lead" style="margin-top:16px">
+          WhateverXe 走的是「给老架构补驱动」的路，覆盖到 Raptor Lake-P；
+          XeGfx 走的是「把 Linux 驱动搬过来」的路，瞄准 Meteor Lake 之后的 Xe-LPG / Xe2。
+        </p>
+        <p class="small muted" style="margin-top:16px">
+          两条线的共同代价是 FairPlay 失效——受保护的视频内容放不了。
+        </p>
+        <p style="margin-top:20px"><a href="intel.html">看 Intel 平台的完整拆解 →</a></p>
+      </div>
+      <div class="stack-lg reveal">
+        <div class="card">
+          <p class="card__title">WhateverXe <small>0.6.1 + 图形包 0.3.2</small></p>
+          <p class="card__body">
+            Tiger Lake-U、Alder Lake-N、ADL-H、ADL-S 的 UHD 770、ADL-P / RPL-P。
+            需要已签名图形包、SIP 0x803、AMFIPass v1.4.1 Mod。最多 3 屏。
+          </p>
+        </div>
+        <div class="card">
+          <p class="card__title">XeGfx <small>0.0.46</small></p>
+          <p class="card__body">
+            Arrow Lake-S/HX 与 Meteor Lake 已跑通，实测 26.7.1 / 26.7.2。
+            把 FreeBSD 的 i915 搬进 XNU，配 Mesa ANV 做 Metal-to-Vulkan。有未决 panic。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 来源 ============ -->
+<section class="section section--tight">
+  <div class="wrap wrap--text">
+    <div class="sources reveal">
+      <p class="caption">来源（访问于 2026-10-29）</p>
+      <ol>
+        <li>nullmoth/nvidia-macos-driver v2.6.4 与 TROUBLESHOOTING — github.com/nullmoth/nvidia-macos-driver（2026-10-29，3870 ★）</li>
+        <li>IT之家「民间开发者发力：英伟达黑苹果开源驱动发布」— 2026-10-09</li>
+        <li>什么值得买「N 卡真能跑黑苹果了：16 到 50 系都支持」— 2026-10-27（含 Minecraft 帧数对比）</li>
+        <li>Dortania GPU Buyers Guide · NVIDIA（Kepler 止于 Big Sur、Pascal 止于 10.13.6、Turing+ 为 None）</li>
+        <li>b00t0x/WhateverXe 与 WhateverXe-Graphics — 2026-10-27</li>
+        <li>watchthelight-labs/XeGfx — 2026-10-29</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <h4>关于本站</h4>
+        <p class="small" style="line-height:1.8">
+          一份关于 2026 年 10 月黑苹果现状的静态档案。所有数据来自 GitHub API 快照、
+          项目官方 README 与中文技术媒体的交叉核对，每条结论都标了来源与时间。
+        </p>
+      </div>
+      <div>
+        <h4>平台</h4>
+        <ul>
+          <li><a href="arm.html">ARM 移植</a></li>
+          <li><a href="intel.html">Intel 平台</a></li>
+          <li><a href="amd.html">AMD 平台</a></li>
+          <li><a href="gpu.html">显卡</a></li>
+          <li><a href="vm.html">虚拟机 / KVM</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>资料</h4>
+        <ul>
+          <li><a href="data.html">硬件矩阵</a></li>
+          <li><a href="data.html#tab=projects">项目图谱</a></li>
+          <li><a href="data.html#tab=dead">已死项目</a></li>
+          <li><a href="data.html#tab=dead">取证纠错</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>声明</h4>
+        <ul>
+          <li>数据截止 2026-10-29</li>
+          <li>star 数为当日快照</li>
+          <li>在非 Apple 硬件运行 macOS 可能违反 Apple 软件许可协议</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>黑苹果配置全景 · 2026 年 10 月版</span>
+      <span>静态站点，无框架、无 CDN、无追踪</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/nav.js"></script>
+</body>
+</html>

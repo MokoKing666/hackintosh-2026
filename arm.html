@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARM 黑苹果 · 四条移植路线 | 黑苹果配置全景 2026</title>
+<meta name="description" content="2026 年 ARM 跑 macOS 的四条路线：UniXNU 通用框架、Snapintosh 骁龙 X2、RK3588 真 EFI、ios-sweet 反向移植。含证据分级与技术瓶颈拆解。">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav__inner">
+    <a class="nav__logo" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="7" y="7" width="10" height="10" rx="2.5"/>
+        <path d="M10 3v3M14 3v3M10 18v3M14 18v3M3 10h3M3 14h3M18 10h3M18 14h3" stroke-linecap="round"/>
+      </svg>
+      黑苹果全景
+    </a>
+    <button class="nav__toggle" aria-expanded="false" aria-label="展开导航"><span></span></button>
+    <nav class="nav__menu">
+      <a class="nav__link" href="index.html">总览</a>
+      <a class="nav__link" href="arm.html">ARM</a>
+      <a class="nav__link" href="intel.html">Intel</a>
+      <a class="nav__link" href="amd.html">AMD</a>
+      <a class="nav__link" href="gpu.html">显卡</a>
+      <a class="nav__link" href="vm.html">虚拟机</a>
+      <a class="nav__link" href="periph.html">外设</a>
+      <a class="nav__link" href="data.html">资料库</a>
+      <a class="nav__cta" href="builder.html">配置生成器</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">ARM</p>
+    <h1>四条路线，两种底层逻辑</h1>
+    <p class="lead">
+      2026 年的 ARM 黑苹果不是一个项目，是四条互不背书的技术路线。
+      它们唯一的共同点是：都要骗过 macOS 对 Apple 硬件的那套假设。
+    </p>
+  </div>
+</section>
+
+<!-- ============ 路线总表 ============ -->
+<section class="section section--tight">
+  <div class="wrap">
+    <div class="table-wrap reveal">
+      <table>
+        <thead>
+          <tr>
+            <th>路线</th>
+            <th>代表项目</th>
+            <th>引导方式</th>
+            <th>已达成</th>
+            <th>证据</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>通用框架</strong></td>
+            <td>UniXNU<br><span class="mono faint">1203 ★</span></td>
+            <td>BootShim → Mu-Silicium UEFI → UniXNU.efi → DarwinBoot → 打补丁的 XNU</td>
+            <td>小米平板 6S Pro 跑通 iPadOS 17.7.11，Adreno 740 + AdrenoMetal 加速；macOS 为下一目标</td>
+            <td><span class="badge badge--ok">开源仓库</span></td>
+          </tr>
+          <tr>
+            <td><strong>骁龙笔记本</strong></td>
+            <td>Snapintosh<br><span class="mono faint">1042 ★</span></td>
+            <td>固件 → q1n1 接管 EL2 → 监视器伪造 SPTM/TXM → 原版 kernelcache</td>
+            <td>macOS 27 进桌面，Adreno X2-90 GPU 加速，内置键鼠与 NVMe 可用</td>
+            <td><span class="badge badge--ok">开源仓库</span></td>
+          </tr>
+          <tr>
+            <td><strong>RK3588</strong></td>
+            <td>秋城落叶 + 奶昔</td>
+            <td><strong>真实 EFI</strong> 引导（明确不是 KVM）</td>
+            <td>macOS 27.2 Beta；双 2.5G 网口、NVMe、32GB 内存总线、Mali-G610 初驱</td>
+            <td><span class="badge badge--partial">实机演示</span></td>
+          </tr>
+          <tr>
+            <td><strong>手机反向</strong></td>
+            <td>ios-sweet<br><span class="mono faint">1133 ★</span></td>
+            <td>UEFI + 打补丁的 XNU</td>
+            <td>Redmi Note 10 Pro 跑 iOS 16.7.16 主屏，无 GPU（CPU 渲染 20–30fps）</td>
+            <td><span class="badge badge--ok">开源仓库</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">
+      注：四条线互不背书。Snapintosh 的成功不能推出骁龙 X Elite 可用，RK3588 的成果也不能证明任何一块 ARM 板子可复制。
+    </p>
+  </div>
+</section>
+
+<!-- ============ 路线详述 ============ -->
+<section class="section section--sunken">
+  <div class="wrap wrap--text">
+    <p class="eyebrow reveal">逐条拆</p>
+    <h2 class="reveal" style="margin-bottom:32px">它们各自解决的是不同问题</h2>
+
+    <div class="route reveal">
+      <div class="route__id">
+        <b>01 · 通用框架</b>
+        UniXNU
+      </div>
+      <div class="route__body">
+        <h3>把「引导 macOS」做成一套可复用的六层栈</h3>
+        <p>
+          这是四条线里野心最大的一条。它不针对某一颗芯片，而是把整条链路拆成可替换的层：
+          固件层用 Project Mu 的 Mu-Silicium 适配具体设备，中间插一个 UniXNU.efi 做内核选择与补丁注入，
+          再由 DarwinBoot 把控制权交给打过补丁的 XNU，最后挂载目标 IPSW 的用户态。
+        </p>
+        <p>
+          目前公开验证到的是 iPadOS 17.7.11 在小米平板 6S Pro（SM8550）上跑通，
+          Adreno 740 通过 AdrenoMetal 拿到了 GPU 加速。macOS 是它的下一个目标，但还没到桌面。
+        </p>
+        <div class="route__tags">
+          <span class="tag">BootShim</span>
+          <span class="tag">Mu-Silicium</span>
+          <span class="tag">DarwinBoot</span>
+          <span class="tag">SM8550</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="route reveal">
+      <div class="route__id">
+        <b>02 · 骁龙笔记本</b>
+        Snapintosh
+      </div>
+      <div class="route__body">
+        <h3>不改内核，在特权层之间插一层伪装</h3>
+        <p>
+          它的思路和传统黑苹果最不一样：不打内核补丁、不改二进制，而是在 EL2 放一个监视器，
+          把骁龙 X2 伪装成 Apple Silicon。内核问 SPTM/TXM 要服务，监视器就假装自己是；
+          内核按 16KiB 页管理内存，监视器做一层 4KiB 硬件影子页表；内核以为自己在跟 AIC 中断控制器、
+          ANS2 存储控制器、DART 打交道，监视器就把这些设备模型模拟出来。
+        </p>
+        <p>
+          代价是它只能跑在一台机器上：ASUS Zenbook A16（UX3607OA）+ 骁龙 X2 Elite X2E-96-100。
+          寄存器、时钟、设备表全部按这台机器调校，README 里写得很直白——「Nothing else is supported」。
+        </p>
+        <div class="route__tags">
+          <span class="tag">q1n1（fork 自 m1n1）</span>
+          <span class="tag">EL2 monitor</span>
+          <span class="tag">SPTM / TXM</span>
+          <span class="tag">16K → 4K 影子页表</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="route reveal">
+      <div class="route__id">
+        <b>03 · RK3588</b>
+        秋城落叶 / 奶昔
+      </div>
+      <div class="route__body">
+        <h3>唯一一条走「真 EFI」的路线</h3>
+        <p>
+          和上面两条都不同：RK3588 走的是标准 UEFI 固件直启，作者专门在推文里辟谣「不是 Linux 底下的 KVM 虚拟机」。
+          系统分区是从一台 MacBook Pro 14（M5）上装好后拷过去的。
+        </p>
+        <p>
+          已点亮的硬件清单相当完整：双 2.5G 网口（自己写了 macOS 驱动）、NVMe 控制器、32GB 内存总线控制器、
+          Mali-G610 核显初驱（1080p HDMI 输出 + Metal 后端计算）。待办还剩完整加速、BE200 无线、RKNN NPU 驱动。
+        </p>
+        <p>
+          但这条线有个硬伤：<strong>零代码公开</strong>。成果只存在于 Telegram 频道和推文里，
+          没有仓库、没有 EFI、没有可复现步骤。它证明了「RK3588 能跑 macOS」，但没法让第二个人跑起来。
+        </p>
+        <div class="route__tags">
+          <span class="tag">edk2-rk3588 系 UEFI</span>
+          <span class="tag">Mali-G610</span>
+          <span class="tag">macOS 27.2 Beta</span>
+          <span class="tag">无仓库</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="route reveal">
+      <div class="route__id">
+        <b>04 · 手机反向</b>
+        ios-sweet
+      </div>
+      <div class="route__body">
+        <h3>方向相反：把 Apple 的内核搬到安卓机上</h3>
+        <p>
+          严格说它不是「ARM 黑苹果」，而是同一个技术族的镜像：把 iPhone X 上的 iOS 16.7.16 用户态，
+          连同打补丁的 XNU，搬到 Redmi Note 10 Pro（骁龙 732G）上。
+        </p>
+        <p>
+          现在已经能进主屏、解锁、开设置、拉控制中心，触摸和按键可用。但 GPU 完全没驱动，
+          全靠 CPU 渲染 20–30fps，8 核只用了 6 个 A55，启动要 4 分钟，没有 Wi-Fi、蓝牙、蜂窝、音频、相机。
+          它已经长出 96 个衍生仓库，覆盖一加 6T、小米 6、小米 11 Lite 等机型。
+        </p>
+        <div class="route__tags">
+          <span class="tag">iOS 16.7.16</span>
+          <span class="tag">SM7150</span>
+          <span class="tag">无 GPU</span>
+          <span class="tag">96 个衍生</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ UniXNU 栈图 ============ -->
+<section class="section">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">结构</p>
+        <h2>UniXNU 的六层栈</h2>
+        <p class="lead" style="margin-top:16px">
+          这是目前唯一一套「不绑定单一设备」的公开架构。
+          每一层都可以替换，意味着换一块板子只需要重做固件层与设备树，而不用重写整条链路。
+        </p>
+        <p class="small muted" style="margin-top:16px">
+          代价是层数越多，出错时越难定位。这也是它到 2026 年 10 月还在 push 的原因。
+        </p>
+      </div>
+      <figure class="figure reveal">
+        <svg viewBox="0 0 720 420" role="img" aria-label="UniXNU 六层启动栈示意图">
+          <g font-family="MiSans, sans-serif">
+            <!-- 层 -->
+            <g>
+              <rect x="60" y="20" width="600" height="52" rx="10" fill="#f5f5f7" stroke="#d2d2d7"/>
+              <text x="80" y="43" font-size="13" font-weight="600" fill="#1d1d1f">BootShim</text>
+              <text x="80" y="60" font-size="11.5" fill="#6e6e73">把厂商固件拉进 UEFI 环境</text>
+              <text x="640" y="52" font-size="11" fill="#86868b" text-anchor="end">EL3 / 固件</text>
+            </g>
+            <g>
+              <rect x="60" y="84" width="600" height="52" rx="10" fill="#f5f5f7" stroke="#d2d2d7"/>
+              <text x="80" y="107" font-size="13" font-weight="600" fill="#1d1d1f">Mu-Silicium UEFI</text>
+              <text x="80" y="124" font-size="11.5" fill="#6e6e73">Project Mu 的 ARM64 设备移植，负责设备树与时钟</text>
+              <text x="640" y="116" font-size="11" fill="#86868b" text-anchor="end">UEFI</text>
+            </g>
+            <g>
+              <rect x="60" y="148" width="600" height="52" rx="10" fill="#eef4ff" stroke="#9dc0f0"/>
+              <text x="80" y="171" font-size="13" font-weight="600" fill="#1d1d1f">UniXNU.efi</text>
+              <text x="80" y="188" font-size="11.5" fill="#6e6e73">选择目标系统、注入内核补丁、准备设备模型</text>
+              <text x="640" y="180" font-size="11" fill="#0071e3" text-anchor="end">UEFI 应用</text>
+            </g>
+            <g>
+              <rect x="60" y="212" width="600" height="52" rx="10" fill="#eef4ff" stroke="#9dc0f0"/>
+              <text x="80" y="235" font-size="13" font-weight="600" fill="#1d1d1f">DarwinBoot</text>
+              <text x="80" y="252" font-size="11.5" fill="#6e6e73">把控制权交给 XNU，同时接管 EL2 上的设备</text>
+              <text x="640" y="244" font-size="11" fill="#0071e3" text-anchor="end">EL2</text>
+            </g>
+            <g>
+              <rect x="60" y="276" width="600" height="52" rx="10" fill="#eaf7ef" stroke="#9ad3b2"/>
+              <text x="80" y="299" font-size="13" font-weight="600" fill="#1d1d1f">打过补丁的 XNU</text>
+              <text x="80" y="316" font-size="11.5" fill="#6e6e73">内核侧绕开 Apple 专有寄存器、重写缓存与中断路径</text>
+              <text x="640" y="308" font-size="11" fill="#1d8a4e" text-anchor="end">EL1</text>
+            </g>
+            <g>
+              <rect x="60" y="340" width="600" height="52" rx="10" fill="#eaf7ef" stroke="#9ad3b2"/>
+              <text x="80" y="363" font-size="13" font-weight="600" fill="#1d1d1f">目标 IPSW 用户态</text>
+              <text x="80" y="380" font-size="11.5" fill="#6e6e73">macOS / iPadOS 的完整用户空间与图形栈</text>
+              <text x="640" y="372" font-size="11" fill="#1d8a4e" text-anchor="end">EL0</text>
+            </g>
+
+            <!-- 箭头 -->
+            <g stroke="#b0b0b5" stroke-width="1.4" fill="none">
+              <path d="M52 46 V366" stroke-dasharray="3 4"/>
+              <path d="M46 360 L52 368 L58 360"/>
+            </g>
+            <text x="20" y="210" font-size="11" fill="#86868b" transform="rotate(-90 20 210)" text-anchor="middle">权限逐级下降</text>
+          </g>
+        </svg>
+        <figcaption>UniXNU 的六层结构。中间两层（UniXNU.efi 与 DarwinBoot）是它与传统 OpenCore 路线最不一样的地方——它们不模拟 PC，而是直接接管 ARM 的异常级别。</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Snapintosh 链路 ============ -->
+<section class="section section--sunken">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:32px">
+      <p class="eyebrow">结构</p>
+      <h2>Snapintosh 的四层链路</h2>
+      <p class="lead" style="max-width:44em;margin-top:16px">
+        这套链路最反直觉的一点：macOS 内核是<strong>原版</strong>的。
+        没有任何内核二进制修改，全部伪装都发生在 EL2。
+      </p>
+    </div>
+
+    <figure class="figure reveal">
+      <svg viewBox="0 0 720 330" role="img" aria-label="Snapintosh 从 UEFI 到用户态的启动链路">
+        <g font-family="MiSans, sans-serif">
+          <rect x="24" y="24" width="150" height="86" rx="10" fill="#f5f5f7" stroke="#d2d2d7"/>
+          <text x="99" y="58" font-size="12.5" font-weight="600" fill="#1d1d1f" text-anchor="middle">A16 UEFI</text>
+          <text x="99" y="78" font-size="11" fill="#6e6e73" text-anchor="middle">华硕原厂固件</text>
+          <text x="99" y="94" font-size="11" fill="#86868b" text-anchor="middle">ExitBootServices</text>
+
+          <rect x="200" y="24" width="150" height="86" rx="10" fill="#f5f5f7" stroke="#d2d2d7"/>
+          <text x="275" y="52" font-size="12.5" font-weight="600" fill="#1d1d1f" text-anchor="middle">q1n1</text>
+          <text x="275" y="72" font-size="11" fill="#6e6e73" text-anchor="middle">fork 自 m1n1</text>
+          <text x="275" y="88" font-size="11" fill="#6e6e73" text-anchor="middle">USB-C 代理协议</text>
+          <text x="275" y="104" font-size="11" fill="#86868b" text-anchor="middle">接管 EL2</text>
+
+          <rect x="376" y="24" width="180" height="86" rx="10" fill="#f3eeff" stroke="#c3aef0"/>
+          <text x="466" y="52" font-size="12.5" font-weight="600" fill="#1d1d1f" text-anchor="middle">Snapintosh 监视器</text>
+          <text x="466" y="72" font-size="11" fill="#6e6e73" text-anchor="middle">伪造 SPTM / TXM</text>
+          <text x="466" y="88" font-size="11" fill="#6e6e73" text-anchor="middle">16K → 4K 影子页表</text>
+          <text x="466" y="104" font-size="11" fill="#6e6e73" text-anchor="middle">AIC / ANS2 / DART 模型</text>
+
+          <rect x="582" y="24" width="114" height="86" rx="10" fill="#eaf7ef" stroke="#9ad3b2"/>
+          <text x="639" y="52" font-size="12.5" font-weight="600" fill="#1d1d1f" text-anchor="middle">XNU + AuxKC</text>
+          <text x="639" y="72" font-size="11" fill="#6e6e73" text-anchor="middle">原版 kernelcache</text>
+          <text x="639" y="88" font-size="11" fill="#6e6e73" text-anchor="middle">AdrenoX2 kext</text>
+          <text x="639" y="104" font-size="11" fill="#86868b" text-anchor="middle">EL1</text>
+
+          <g stroke="#b0b0b5" stroke-width="1.4" fill="none">
+            <path d="M174 67 H196"/>
+            <path d="M190 63 L198 67 L190 71"/>
+            <path d="M350 67 H372"/>
+            <path d="M366 63 L374 67 L366 71"/>
+            <path d="M556 67 H578"/>
+            <path d="M572 63 L580 67 L572 71"/>
+          </g>
+
+          <!-- 下层 -->
+          <rect x="24" y="140" width="672" height="76" rx="10" fill="#fbfbfd" stroke="#e0e0e5"/>
+          <text x="44" y="166" font-size="12" font-weight="600" fill="#1d1d1f">EL0 用户空间</text>
+          <text x="44" y="186" font-size="11.5" fill="#6e6e73">WindowServer · Core Animation · 应用</text>
+          <text x="44" y="203" font-size="11.5" fill="#6e6e73">AdrenoMetal.bundle（Metal 插件）· air2ir3（AIR → Mesa ir3 着色器编译）</text>
+
+          <rect x="24" y="232" width="330" height="74" rx="10" fill="#fbfbfd" stroke="#e0e0e5"/>
+          <text x="44" y="258" font-size="12" font-weight="600" fill="#1d1d1f">必需的外部条件</text>
+          <text x="44" y="278" font-size="11.5" fill="#6e6e73">每次启动都要一台跑 macOS 27 的 Mac，</text>
+          <text x="44" y="294" font-size="11.5" fill="#6e6e73">经 USB-C 建立 NCM 网络喂入内核与日志。</text>
+
+          <rect x="366" y="232" width="330" height="74" rx="10" fill="#fff6e8" stroke="#e8c98f"/>
+          <text x="386" y="258" font-size="12" font-weight="600" fill="#1d1d1f">许可提示</text>
+          <text x="386" y="278" font-size="11.5" fill="#6e6e73">q1n1 上游是 GPL-2.0 的 m1n1，fork 标了 MIT；</text>
+          <text x="386" y="294" font-size="11.5" fill="#6e6e73">仓库不含任何 Apple / 高通 / 华硕二进制。</text>
+        </g>
+      </svg>
+      <figcaption>从上到下是权限逐级下降：UEFI 交棒给 EL2 的 q1n1 与监视器，监视器再把一个「看起来像 Apple 硬件」的世界交给 EL1 的内核，最后才是用户态。</figcaption>
+    </figure>
+
+    <div class="grid grid--3" style="margin-top:32px">
+      <div class="card reveal">
+        <p class="card__title">已可用</p>
+        <ul class="ticks card__body">
+          <li>进入 macOS 27 桌面，Liquid Glass 界面正常渲染</li>
+          <li>Adreno X2-90 硬件加速（非软件渲染）</li>
+          <li>内置键盘、触控板、多指手势、Mission Control</li>
+          <li>安装到内置 NVMe 并从其启动</li>
+        </ul>
+      </div>
+      <div class="card reveal">
+        <p class="card__title">部分可用</p>
+        <ul class="ticks ticks--dot card__body">
+          <li>帧率未达标：目标 60Hz，面板 120Hz</li>
+          <li>Wi-Fi 只能经 Mac 宿主代理扫描与连接，无法从菜单直接加入网络</li>
+        </ul>
+      </div>
+      <div class="card reveal">
+        <p class="card__title">完全不可用</p>
+        <ul class="ticks ticks--cross card__body">
+          <li>音频、摄像头、蓝牙</li>
+          <li>睡眠、外接显示器</li>
+          <li>独立引导（必须靠 Mac 喂入）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 证据分级 ============ -->
+<section class="section">
+  <div class="wrap">
+    <p class="eyebrow reveal">甄别</p>
+    <h2 class="reveal">证据分级：看仓库，不看视频</h2>
+    <p class="lead reveal" style="max-width:42em;margin:16px 0 32px">
+      ARM 跑 macOS 的传闻特别多，因为「macOS 风格桌面」和「原生引导」在视频里长得一模一样。
+      这张表按可复现性排序，从强到弱。
+    </p>
+
+    <div class="table-wrap reveal">
+      <table>
+        <thead>
+          <tr>
+            <th>平台</th>
+            <th>项目</th>
+            <th>证据等级</th>
+            <th>最后更新</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>骁龙 X2 Elite</td>
+            <td>Snapintosh</td>
+            <td><span class="badge badge--ok">开源仓库 + 实机</span></td>
+            <td class="num">2026-10-25</td>
+            <td>1042 ★，但无第三方独立复现，17 个 fork 全是镜像</td>
+          </tr>
+          <tr>
+            <td>SM8550 平板</td>
+            <td>UniXNU</td>
+            <td><span class="badge badge--ok">开源仓库 + 实机</span></td>
+            <td class="num">2026-10-29</td>
+            <td>iPadOS 已跑通，macOS 未到桌面</td>
+          </tr>
+          <tr>
+            <td>SM8550 平板</td>
+            <td>macOS-ForSheng</td>
+            <td><span class="badge badge--ok">开源仓库 + 实机</span></td>
+            <td class="num">2026-10-29</td>
+            <td>macOS 26.5 到 Recovery 语言选择器，强制 cpus=1</td>
+          </tr>
+          <tr>
+            <td>SM7150 手机</td>
+            <td>ios-sweet</td>
+            <td><span class="badge badge--ok">开源仓库 + 实机</span></td>
+            <td class="num">2026-10-23</td>
+            <td>反向移植，iOS 进主屏</td>
+          </tr>
+          <tr>
+            <td>RK3588</td>
+            <td>秋城落叶 / 奶昔</td>
+            <td><span class="badge badge--partial">实机演示</span></td>
+            <td class="num">2026-10-28</td>
+            <td>真 EFI 引导 macOS 27.2 Beta，但零代码、零 EFI</td>
+          </tr>
+          <tr>
+            <td>骁龙 X Elite</td>
+            <td>—</td>
+            <td><span class="badge badge--none">不存在</span></td>
+            <td class="num">—</td>
+            <td>Snapintosh 明确「Nothing else is supported」</td>
+          </tr>
+          <tr>
+            <td>NVIDIA N1x / GB10</td>
+            <td>—</td>
+            <td><span class="badge badge--none">不存在</span></td>
+            <td class="num">—</td>
+            <td>只有 Windows on Arm 与 DGX OS 路线</td>
+          </tr>
+          <tr>
+            <td>树莓派 5</td>
+            <td>—</td>
+            <td><span class="badge badge--none">仅虚拟机</span></td>
+            <td class="num">—</td>
+            <td>BCM2712 无 UEFI 也无 macOS 相关项目</td>
+          </tr>
+          <tr>
+            <td>天玑 Kompanio / 飞腾 / 鲲鹏</td>
+            <td>—</td>
+            <td><span class="badge badge--none">不存在</span></td>
+            <td class="num">—</td>
+            <td>检索无任何 macOS 引导证据</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">
+      判别方法很简单：<strong>要仓库链接，不要视频链接</strong>。有仓库的项目能查到 commit 时间、issue 和复现者；
+      只有视频的项目，先假设它是「macOS 主题的 Linux」或「虚拟机全屏」。
+    </p>
+  </div>
+</section>
+
+<!-- ============ 为什么难 ============ -->
+<section class="section section--dark">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">瓶颈</p>
+        <h2>为什么三年只有个位数团队做出来</h2>
+        <p class="lead" style="margin-top:16px">
+          x86 黑苹果是配置工程：UEFI、ACPI、PCIe 都是公开标准，
+          OpenCore 负责在标准之上打补丁。ARM 这边没有标准可依。
+        </p>
+      </div>
+      <div class="stack-lg reveal">
+        <div class="card" style="background:transparent">
+          <p class="card__title">没有 iBoot，也没有设备树</p>
+          <p class="card__body">
+            Apple 的启动链是 BootROM → iBoot → 内核，中间没有 UEFI 接口。
+            要引导 macOS，要么像 RK3588 那样伪造一整套 EFI 环境，要么像 Snapintosh 那样在 EL2 里造一个假平台。
+          </p>
+        </div>
+        <div class="card" style="background:transparent">
+          <p class="card__title">页表粒度对不上</p>
+          <p class="card__body">
+            XNU 在 Apple Silicon 上按 16KiB 页管理内存，而绝大多数 ARM SoC 的 MMU 只认 4KiB。
+            Snapintosh 为此做了一层影子页表，这是它能启动的前提之一。
+          </p>
+        </div>
+        <div class="card" style="background:transparent">
+          <p class="card__title">GPU 闭源，只能自己写驱动栈</p>
+          <p class="card__body">
+            Adreno、Mali 都没有 macOS 驱动。Snapintosh 自己写了 Metal 插件 + IOGPU kext，
+            再把 Apple 的 AIR 中间表示翻译成 Mesa 的 ir3；RK3588 那边则是把 Metal 后端计算跑在 Mali 上。
+          </p>
+        </div>
+        <div class="card" style="background:transparent">
+          <p class="card__title">AuxKC 签名是结构性障碍</p>
+          <p class="card__body">
+            自 macOS 11 起，第三方 kext 必须并入 AuxKC，且度量值要被签进 LocalPolicy。
+            在非 Apple 硬件上重建 AuxKC 需要用户手动批准并重启，这一条几乎无法绕过。
+          </p>
+        </div>
+        <div class="callout callout--warn">
+          <strong>关于虚拟机：</strong>UTM、VirtualBuddy 都只支持 Apple Silicon 宿主；
+          QEMU 没有可用的 arm64 macOS 机器模型。所以在非 Apple ARM 硬件上「用虚拟机跑 macOS」
+          这条路，是架构性为零，不是成熟度不够。反过来，x86 上的 KVM 是条成熟主线——见
+          <a href="vm.html">虚拟机篇</a>。
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 来源 ============ -->
+<section class="section section--tight">
+  <div class="wrap wrap--text">
+    <div class="sources reveal">
+      <p class="caption">来源（访问于 2026-10-29）</p>
+      <ol>
+        <li>Snapintosh README 与仓库元数据 — github.com/Snapintosh/Snapintosh（最后提交 2026-10-25）</li>
+        <li>奶昔 realNyarime 推文：RK3588 引导 macOS 27.2 Beta、自写双 2.5G 网卡驱动 — x.com/realNyarime/status/2115408749171208398（2026-10-28）</li>
+        <li>秋城落叶 RK3588 启动 arm64e macOS 14 — x.com/realNyarime/status/2112761346144239765（2026-10-21）</li>
+        <li>UniXNU 仓库与文档站 — github.com/UniXNU/UniXNU、unixnu.com</li>
+        <li>macOS-ForSheng — github.com/CrossDarwin/macOS-ForSheng</li>
+        <li>ios-sweet — github.com/dipa-studio/ios-sweet</li>
+        <li>edk2-rk3588 — github.com/edk2-porting/edk2-rk3588</li>
+        <li>Dortania OpenCore Install Guide · macOS 26 Tahoe 专页 — dortania.github.io</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <h4>关于本站</h4>
+        <p class="small" style="line-height:1.8">
+          一份关于 2026 年 10 月黑苹果现状的静态档案。所有数据来自 GitHub API 快照、
+          项目官方 README 与中文技术媒体的交叉核对，每条结论都标了来源与时间。
+        </p>
+      </div>
+      <div>
+        <h4>平台</h4>
+        <ul>
+          <li><a href="arm.html">ARM 移植</a></li>
+          <li><a href="intel.html">Intel 平台</a></li>
+          <li><a href="amd.html">AMD 平台</a></li>
+          <li><a href="gpu.html">显卡</a></li>
+          <li><a href="vm.html">虚拟机 / KVM</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>资料</h4>
+        <ul>
+          <li><a href="data.html">硬件矩阵</a></li>
+          <li><a href="data.html#tab=projects">项目图谱</a></li>
+          <li><a href="data.html#tab=dead">已死项目</a></li>
+          <li><a href="data.html#tab=dead">取证纠错</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>声明</h4>
+        <ul>
+          <li>数据截止 2026-10-29</li>
+          <li>star 数为当日快照</li>
+          <li>在非 Apple 硬件运行 macOS 可能违反 Apple 软件许可协议</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>黑苹果配置全景 · 2026 年 10 月版</span>
+      <span>静态站点，无框架、无 CDN、无追踪</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>黑苹果配置全景 2026 · x86 定格，ARM 开闸</title>
+<meta name="description" content="2026 年 10 月黑苹果全景：macOS 27 终结 Intel，ARM 四条移植路线（UniXNU / Snapintosh / RK3588 / ios-sweet），NullMoth 让 N 卡 16–50 系重新点亮。附硬件兼容矩阵与配置生成器。">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav__inner">
+    <a class="nav__logo" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="7" y="7" width="10" height="10" rx="2.5"/>
+        <path d="M10 3v3M14 3v3M10 18v3M14 18v3M3 10h3M3 14h3M18 10h3M18 14h3" stroke-linecap="round"/>
+      </svg>
+      黑苹果全景
+    </a>
+    <button class="nav__toggle" aria-expanded="false" aria-label="展开导航"><span></span></button>
+    <nav class="nav__menu">
+      <a class="nav__link" href="index.html">总览</a>
+      <a class="nav__link" href="arm.html">ARM</a>
+      <a class="nav__link" href="intel.html">Intel</a>
+      <a class="nav__link" href="amd.html">AMD</a>
+      <a class="nav__link" href="gpu.html">显卡</a>
+      <a class="nav__link" href="vm.html">虚拟机</a>
+      <a class="nav__link" href="periph.html">外设</a>
+      <a class="nav__link" href="data.html">资料库</a>
+      <a class="nav__cta" href="builder.html">配置生成器</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">2026 年 10 月 · 全景报告</p>
+    <h1 class="display">x86 定格，<br>ARM 开闸。</h1>
+    <p class="hero__sub">
+      macOS 27 把 Intel 关在门外，黑苹果的天花板钉死在 26.7。
+      但同一时间，四条 ARM 移植路线在跑，N 卡从 16 系到 50 系重新点亮，
+      Intel 核显被第三方驱动拽了回来。这是终结，也是换轨。
+    </p>
+    <div class="hero__meta">
+      <span><i></i>数据截止 2026-10-29</span>
+      <span><i></i>86 个开源项目取证</span>
+      <span><i></i>51 条硬件兼容记录</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 三条结论 ============ -->
+<section class="section section--tight">
+  <div class="wrap">
+    <div class="verdicts reveal">
+      <div>
+        <p class="verdicts__num">01 / 系统边界</p>
+        <h3>26.7 就是终点，没有 27</h3>
+        <p>macOS 27 Golden Gate 只支持 Apple Silicon。Tahoe 只剩 4 个 SMBIOS 可用，OCLP 团队已明确没有 27 的适配计划。Intel 机型的安全更新能撑到 2028 年前后。</p>
+      </div>
+      <div>
+        <p class="verdicts__num">02 / ARM 现状</p>
+        <h3>四条线在跑，两条有代码</h3>
+        <p>UniXNU 有仓库、有文档、小米平板 6S Pro 已跑通 iPadOS；Snapintosh 开源且带 Adreno 加速。RK3588 跑通了 macOS 27.2 Beta 但零代码公开；ios-sweet 是反向移植。</p>
+      </div>
+      <div>
+        <p class="verdicts__num">03 / 硬件禁区</p>
+        <h3>Navi 3x 与 780M 仍然是墙</h3>
+        <p>RX 7900 XTX、RX 7800 XT、Radeon 780M 至今无解，且 Dortania 判断「未来几乎不可能加入」。反倒是被官方判死的 N 卡，被第三方驱动救了回来。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 两个世界 ============ -->
+<section class="section section--sunken">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">分岔口</p>
+        <h2>同一年，两条曲线交叉</h2>
+        <p class="lead" style="margin-top:16px">
+          x86 这条线从 2005 年走到 2026 年，靠 OpenCore 骗过 ACPI 与 SMBIOS，
+          把一台 PC 装成 Mac。ARM 这条线才刚起步三年，靠的是伪造 Apple 的
+          SPTM/TXM 调用契约、16K→4K 页表转换、着色器翻译——不是配置工程，是内核级逆向。
+        </p>
+        <p class="small muted" style="margin-top:20px">
+          这也解释了为什么 ARM 侧三年只有个位数团队做出来，而 x86 侧有上万个现成 EFI 可以抄。
+        </p>
+      </div>
+      <figure class="figure reveal">
+        <svg viewBox="0 0 720 300" role="img" aria-label="x86 与 ARM 两条路线在 macOS 26 与 27 之间分岔的示意图">
+          <g font-family="MiSans, sans-serif">
+            <!-- 年份刻度：线性，2005→2027 -->
+            <g stroke="#e4e4e9" stroke-width="1">
+              <line x1="70" y1="44" x2="70" y2="252"/>
+              <line x1="195" y1="44" x2="195" y2="252" stroke-dasharray="2 5"/>
+              <line x1="320" y1="44" x2="320" y2="252" stroke-dasharray="2 5"/>
+              <line x1="445" y1="44" x2="445" y2="252" stroke-dasharray="2 5"/>
+              <line x1="595" y1="44" x2="595" y2="252" stroke-dasharray="2 5"/>
+            </g>
+
+            <!-- x86 行 -->
+            <text x="70" y="72" font-size="11.5" font-weight="600" fill="#1d1d1f">x86 黑苹果</text>
+            <rect x="70" y="82" width="525" height="10" rx="5" fill="#0071e3"/>
+            <circle cx="595" cy="87" r="6" fill="#ffffff" stroke="#0071e3" stroke-width="2.5"/>
+            <line x1="604" y1="87" x2="648" y2="87" stroke="#c0392b" stroke-width="2" stroke-dasharray="5 5"/>
+            <text x="604" y="72" font-size="10.5" font-weight="600" fill="#c0392b">27 起不再支持</text>
+            <text x="604" y="106" font-size="10" fill="#86868b">上限 26.7.x</text>
+
+            <!-- ARM 行 -->
+            <text x="445" y="156" font-size="11.5" font-weight="600" fill="#1d1d1f">ARM 移植</text>
+            <text x="505" y="156" font-size="10" fill="#86868b">2026 年才真正起步</text>
+            <path d="M445 172 H640" stroke="#7b4fd8" stroke-width="2.5" stroke-dasharray="6 5" fill="none"/>
+            <path d="M632 167 L642 172 L632 177" fill="#7b4fd8"/>
+            <circle cx="588" cy="172" r="4.5" fill="#7b4fd8"/>
+            <circle cx="620" cy="172" r="4.5" fill="#7b4fd8"/>
+            <text x="588" y="194" font-size="10" fill="#6e6e73" text-anchor="middle">Snapintosh</text>
+            <text x="620" y="208" font-size="10" fill="#6e6e73" text-anchor="middle">RK3588</text>
+
+            <!-- 原生行 -->
+            <text x="445" y="228" font-size="11.5" font-weight="600" fill="#1d8a4e">Apple Silicon 原生</text>
+            <rect x="445" y="238" width="195" height="8" rx="4" fill="#1d8a4e" opacity="0.3"/>
+
+            <!-- 刻度标签 -->
+            <g font-size="10.5" fill="#86868b" text-anchor="middle">
+              <text x="70" y="272">2005</text>
+              <text x="195" y="272">2010</text>
+              <text x="320" y="272">2015</text>
+              <text x="445" y="272">2020</text>
+              <text x="595" y="272">2026</text>
+            </g>
+          </g>
+        </svg>
+        <figcaption>蓝色为 x86 黑苹果的可运行区间（2005 – 2026.7），绿色为 Apple Silicon 的原生支持，紫色虚线为 2026 年出现的 ARM 移植尝试。</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2026 大事记 ============ -->
+<section class="section">
+  <div class="wrap wrap--text">
+    <p class="eyebrow reveal">2026 大事记</p>
+    <h2 class="reveal">一个半月，六件事把局面改写</h2>
+    <p class="lead reveal" style="margin:16px 0 40px">
+      从 9 月 macOS 27 推送，到 10 月底 RK3588 跑起 27.2 Beta，黑苹果社区的节奏比过去三年加起来都快。
+    </p>
+
+    <div class="timeline reveal">
+      <div class="timeline__item timeline__item--major">
+        <div class="timeline__date">09-15</div>
+        <div>
+          <p class="timeline__title">macOS 27 Golden Gate 正式推送</p>
+          <p class="timeline__desc">首个仅支持 Apple Silicon 的 macOS。x86 黑苹果的上限被钉在 26.7.x，Tahoe 只剩 4 个 SMBIOS。</p>
+        </div>
+      </div>
+      <div class="timeline__item timeline__item--major">
+        <div class="timeline__date">10-07</div>
+        <div>
+          <p class="timeline__title">NullMoth 开源 NVIDIA Metal 驱动</p>
+          <p class="timeline__desc">GTX 16 到 RTX 50 全系覆盖，247 个 PCI ID。三周冲到近 4000 star，是今年增速最快的黑苹果项目。</p>
+        </div>
+      </div>
+      <div class="timeline__item">
+        <div class="timeline__date">10-09</div>
+        <div>
+          <p class="timeline__title">WhateverXe 上线，Intel Xe 核显破冰</p>
+          <p class="timeline__desc">Tiger Lake-U、Alder Lake-N、UHD 770 首次有 Metal 加速，代价是 FairPlay 失效、必须用签名图形包。</p>
+        </div>
+      </div>
+      <div class="timeline__item">
+        <div class="timeline__date">10-21</div>
+        <div>
+          <p class="timeline__title">RK3588 启动 arm64e macOS 14</p>
+          <p class="timeline__desc">秋城落叶在 Orange Pi 5 Plus 上跑通 RecoveryOS，八核可用，Mali-G610 能向 HDMI 输出 3D 立方体。</p>
+        </div>
+      </div>
+      <div class="timeline__item timeline__item--major">
+        <div class="timeline__date">10-22</div>
+        <div>
+          <p class="timeline__title">Snapintosh 开源</p>
+          <p class="timeline__desc">骁龙 X2 Elite 笔记本跑起 macOS 27 桌面，Adreno X2-90 硬件加速。EL2 监视器伪造 Apple 平台契约，不改内核二进制。</p>
+        </div>
+      </div>
+      <div class="timeline__item timeline__item--major">
+        <div class="timeline__date">10-28</div>
+        <div>
+          <p class="timeline__title">RK3588 跑通 macOS 27.2 Beta</p>
+          <p class="timeline__desc">双 2.5G 网口（自写 macOS 驱动）、NVMe、32GB 内存总线、Mali-G610 初驱全部点亮。真 EFI 引导，不是 KVM——但没有一行代码公开。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 入口 ============ -->
+<section class="section section--sunken">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:40px">
+      <p class="eyebrow">往下读</p>
+      <h2>按平台进</h2>
+    </div>
+
+    <div class="plat reveal">
+      <a class="plat__card" href="arm.html">
+        <span class="plat__kicker">ARM</span>
+        <p class="plat__title">四条移植路线</p>
+        <p class="plat__desc">UniXNU 的六层栈、Snapintosh 的 EL2 伪装、RK3588 的真 EFI、ios-sweet 的反向移植。附带证据分级。</p>
+        <div class="plat__foot">
+          <span class="badge badge--exp">实验</span>
+          <span class="badge badge--plain">4 条线</span>
+        </div>
+      </a>
+      <a class="plat__card" href="intel.html">
+        <span class="plat__kicker">INTEL</span>
+        <p class="plat__title">末代 x86 的余量</p>
+        <p class="plat__desc">9~10 代开箱可用，12~14 代要 CPUID 伪装，Iris Xe 有两条实验路线。UHD 630 是最后的免驱核显。</p>
+        <div class="plat__foot">
+          <span class="badge badge--ok">可用</span>
+          <span class="badge badge--plain">≤ 26.7</span>
+        </div>
+      </a>
+      <a class="plat__card" href="amd.html">
+        <span class="plat__kicker">AMD</span>
+        <p class="plat__title">补丁换来的性能</p>
+        <p class="plat__desc">Vanilla 补丁链最成熟，代价是没有 Hypervisor——Docker、Parallels、VMware 的硬加速全废。</p>
+        <div class="plat__foot">
+          <span class="badge badge--patch">需补丁</span>
+          <span class="badge badge--plain">≤ 26.7</span>
+        </div>
+      </a>
+      <a class="plat__card" href="gpu.html">
+        <span class="plat__kicker">显卡</span>
+        <p class="plat__title">N 卡回来了，但有条件</p>
+        <p class="plat__desc">NullMoth 覆盖 16–50 系，能点亮、能跑 Metal，性能却只有 Windows 的十分之一。A 卡仍是免驱主力。</p>
+        <div class="plat__foot">
+          <span class="badge badge--exp">实验</span>
+          <span class="badge badge--ok">A 卡免驱</span>
+        </div>
+      </a>
+      <a class="plat__card" href="periph.html">
+        <span class="plat__kicker">外设</span>
+        <p class="plat__title">装完之后才是坑</p>
+        <p class="plat__desc">无线四条路线、音频三条路线、I225/I226、USB 映射、睡眠与 iServices 三码。Tahoe 移除了 AppleHDA。</p>
+        <div class="plat__foot">
+          <span class="badge badge--partial">部分可用</span>
+        </div>
+      </a>
+      <a class="plat__card" href="builder.html">
+        <span class="plat__kicker">工具</span>
+        <p class="plat__title">配置生成器</p>
+        <p class="plat__desc">选 CPU、显卡、网卡、音频和目标系统，直接给出结论、系统上限、必做清单与风险清单。</p>
+        <div class="plat__foot">
+          <span class="badge badge--plain">实时评估</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 另一条路 ============ -->
+<section class="section">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">另一条路</p>
+        <h2>不拆机箱，也能跑 macOS</h2>
+        <p class="lead" style="margin-top:16px">
+          过去六年里，跑 macOS 最省事的方式其实一直是 KVM：不用一台 Mac，不用挑主板，
+          不用改 BIOS。装坏了删掉重来，还能跑在无头服务器上。
+        </p>
+        <p class="small muted" style="margin-top:16px">
+          代价很明确——没有 GPU 直通就没有 Metal。直通一张免驱 A 卡，性能能回到九成；
+          塞一张 N 卡进去则基本没戏，NullMoth 是裸机驱动。
+        </p>
+        <p style="margin-top:20px"><a href="vm.html">看虚拟机 / KVM 篇 →</a></p>
+      </div>
+      <div class="reveal">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>路线</th>
+                <th>宿主要求</th>
+                <th>图形</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>QEMU / KVM</strong></td>
+                <td>x86 宿主，Intel / AMD 都行</td>
+                <td>无直通＝软渲染，直通 A 卡≈原生</td>
+              </tr>
+              <tr>
+                <td><strong>Virtualization.framework</strong></td>
+                <td>只能 Apple Silicon</td>
+                <td>有 Metal，接近原生</td>
+              </tr>
+              <tr>
+                <td><strong>全模拟（TCG）</strong></td>
+                <td>任意平台</td>
+                <td>慢到不可用</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">三条路都不改变一个事实：虚拟机里跑的仍是 x86 版 macOS，天花板还是 26.7。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 该不该上车 ============ -->
+<section class="section section--dark">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">判断</p>
+        <h2>现在该不该上车</h2>
+        <p class="lead" style="margin-top:16px">
+          把「折腾」和「干活」分开看，答案会清楚很多。
+        </p>
+      </div>
+      <div class="stack-lg reveal">
+        <div class="card" style="background:transparent">
+          <p class="card__title">为了折腾 —— 现在是三年里最好的时候</p>
+          <p class="card__body">
+            ARM 侧从零到四条线只用了三年，N 卡和 Intel 核显同时被第三方驱动救活，
+            每天都有新 commit。等到 2028 年安全更新停掉，这批项目会一起凉。
+          </p>
+        </div>
+        <div class="card" style="background:transparent">
+          <p class="card__title">为了干活 —— 别上车</p>
+          <p class="card__body">
+            系统定格在 26.7，驱动永远停在 2026 年。没有 FairPlay、没有 AirDrop、
+            没有硬件编解码，Adobe 与 Docker 各有各的坑。同价位一台二手 Mac mini 更省命。
+          </p>
+        </div>
+        <div class="callout">
+          <strong>一条经验：</strong>先查矩阵再买件。Navi 3x、Radeon 780M、Intel Arc 这三类，
+          无论谁跟你说「有教程」，都别信。
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="section cta-band">
+  <div class="wrap">
+    <h2>先算一遍，再拆机箱</h2>
+    <p>配置生成器会告诉你这套件能不能装、缺什么补丁、以及会失去什么。</p>
+    <div class="builder__actions">
+      <a class="btn btn--primary" href="builder.html">打开配置生成器</a>
+      <a class="btn" href="data.html">看完整矩阵</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <h4>关于本站</h4>
+        <p class="small" style="line-height:1.8">
+          一份关于 2026 年 10 月黑苹果现状的静态档案。所有数据来自 GitHub API 快照、
+          项目官方 README 与中文技术媒体的交叉核对，每条结论都标了来源与时间。
+        </p>
+      </div>
+      <div>
+        <h4>平台</h4>
+        <ul>
+          <li><a href="arm.html">ARM 移植</a></li>
+          <li><a href="intel.html">Intel 平台</a></li>
+          <li><a href="amd.html">AMD 平台</a></li>
+          <li><a href="gpu.html">显卡</a></li>
+          <li><a href="vm.html">虚拟机 / KVM</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>资料</h4>
+        <ul>
+          <li><a href="data.html">硬件矩阵</a></li>
+          <li><a href="data.html#tab=projects">项目图谱</a></li>
+          <li><a href="data.html#tab=dead">已死项目</a></li>
+          <li><a href="data.html#tab=dead">取证纠错</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>声明</h4>
+        <ul>
+          <li>数据截止 2026-10-29</li>
+          <li>star 数为当日快照</li>
+          <li>在非 Apple 硬件运行 macOS 可能违反 Apple 软件许可协议</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>黑苹果配置全景 · 2026 年 10 月版</span>
+      <span>静态站点，无框架、无 CDN、无追踪</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/nav.js"></script>
+</body>
+</html>

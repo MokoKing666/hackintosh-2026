@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>虚拟机 · KVM 这条主线 | 黑苹果配置全景 2026</title>
+<meta name="description" content="QEMU/KVM 跑 macOS 的完整现状：OSX-KVM、Docker-OSX、quickemu、OpenCore-ISO、Proxmox 方案对比，GPU 直通能到什么程度，以及为什么 ARM 上这条路走不通。">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav__inner">
+    <a class="nav__logo" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="7" y="7" width="10" height="10" rx="2.5"/>
+        <path d="M10 3v3M14 3v3M10 18v3M14 18v3M3 10h3M3 14h3M18 10h3M18 14h3" stroke-linecap="round"/>
+      </svg>
+      黑苹果全景
+    </a>
+    <button class="nav__toggle" aria-expanded="false" aria-label="展开导航"><span></span></button>
+    <nav class="nav__menu">
+      <a class="nav__link" href="index.html">总览</a>
+      <a class="nav__link" href="arm.html">ARM</a>
+      <a class="nav__link" href="intel.html">Intel</a>
+      <a class="nav__link" href="amd.html">AMD</a>
+      <a class="nav__link" href="gpu.html">显卡</a>
+      <a class="nav__link" href="vm.html">虚拟机</a>
+      <a class="nav__link" href="periph.html">外设</a>
+      <a class="nav__link" href="data.html">资料库</a>
+      <a class="nav__cta" href="builder.html">配置生成器</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">虚拟机 / KVM</p>
+    <h1>虚拟机不是退路，<br>是另一条主线</h1>
+    <p class="lead">
+      黑苹果被讲成「拆机箱、刷 EFI」的事，但过去六年里跑 macOS 最省事的方式一直是 KVM：
+      不用一台 Mac，不用挑主板，不用改 BIOS。x86 定格在 26.7 之后，这条路反而更重要了。
+    </p>
+  </div>
+</section>
+
+<!-- ============ 三条路线 ============ -->
+<section class="section section--tight">
+  <div class="wrap">
+    <div class="table-wrap reveal">
+      <table>
+        <thead>
+          <tr>
+            <th>路线</th>
+            <th>代表项目</th>
+            <th>宿主要求</th>
+            <th>能跑什么</th>
+            <th>图形</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>QEMU / KVM + OpenCore</strong></td>
+            <td>OSX-KVM · Docker-OSX · quickemu · OpenCore-ISO</td>
+            <td>x86 宿主（Intel / AMD 都行）</td>
+            <td>x86 版 macOS，从 10.4 Tiger 到 26 Tahoe</td>
+            <td>无直通＝软件渲染；直通 A 卡≈原生</td>
+          </tr>
+          <tr>
+            <td><strong>Virtualization.framework</strong></td>
+            <td>UTM · VirtualBuddy</td>
+            <td><strong>只能 Apple Silicon 宿主</strong></td>
+            <td>arm64 macOS（Apple 官方虚拟化接口）</td>
+            <td>有 Metal，接近原生</td>
+          </tr>
+          <tr>
+            <td><strong>全模拟（TCG）</strong></td>
+            <td>QEMU 无 KVM 模式</td>
+            <td>任意平台，包括 ARM</td>
+            <td>理论上都能跑</td>
+            <td>慢到不可用，仅调试</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">
+      关键区别：<strong>KVM 需要 x86 宿主 + x86 版 macOS</strong>；Apple 的虚拟化框架只能跑在 Apple 硬件上。
+      所以「在 ARM 板子上用虚拟机跑 macOS」这件事，两条路都堵死了——详见 <a href="arm.html">ARM 篇</a>。
+    </p>
+  </div>
+</section>
+
+<!-- ============ KVM 能给你什么 ============ -->
+<section class="section section--sunken">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">取舍</p>
+        <h2>它能给你什么，拿不走什么</h2>
+        <p class="lead" style="margin-top:16px">
+          KVM 的本质是把「挑硬件」换成「配虚拟机」：虚拟硬件是固定的，
+          OpenCore 只要针对 Q35 + OVMF 写一次，换机器直接迁移还能启动。
+        </p>
+        <p class="small muted" style="margin-top:16px">
+          代价是——你拿不到真正的 GPU 加速，除非把一张卡整个直通进去。
+        </p>
+      </div>
+      <div class="grid grid--2 reveal">
+        <div class="card">
+          <p class="card__title">能拿到</p>
+          <ul class="ticks card__body">
+            <li>CPU 接近原生（KVM 硬件虚拟化，非模拟）</li>
+            <li>快照、克隆、回滚，装坏了三十秒还原</li>
+            <li>跑在无头服务器上，Proxmox 一条命令起一台</li>
+            <li>同一台机器同时开 Windows / Linux / macOS</li>
+            <li>不需要挑主板、不需要改 BIOS、不需要第二台电脑做引导盘</li>
+          </ul>
+        </div>
+        <div class="card">
+          <p class="card__title">拿不到</p>
+          <ul class="ticks ticks--cross card__body">
+            <li>没有 GPU 直通就没有 Metal，界面卡顿、视频软解</li>
+            <li>iServices 要三码 + en0 内建网卡，比裸机更挑配置</li>
+            <li>DRM / FairPlay 内容基本放不了</li>
+            <li>USB 直通、音频延迟、休眠都不如裸机</li>
+            <li>ARM 宿主上完全无解（没有 arm64 机器模型）</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 性能 ============ -->
+<section class="section">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">性能</p>
+        <h2>瓶颈从来不是 CPU</h2>
+        <p class="lead" style="margin-top:16px">
+          开了 KVM 之后，CPU 与内存几乎是原生的；磁盘走 virtio 有一点损耗；
+          真正决定体验的是那张显卡有没有直通进去。
+        </p>
+        <p class="small muted" style="margin-top:16px">
+          下面是社区常见配置的经验区间，不是基准测试，只用来判断瓶颈在哪一层。
+        </p>
+      </div>
+      <div class="reveal">
+        <div class="bars">
+          <div class="bar">
+            <span>CPU</span>
+            <span class="bar__track"><span class="bar__fill" style="width:97%"></span></span>
+            <span class="bar__val">≈ 97%</span>
+          </div>
+          <div class="bar">
+            <span>内存</span>
+            <span class="bar__track"><span class="bar__fill" style="width:99%"></span></span>
+            <span class="bar__val">≈ 99%</span>
+          </div>
+          <div class="bar">
+            <span>磁盘</span>
+            <span class="bar__track"><span class="bar__fill" style="width:88%"></span></span>
+            <span class="bar__val">≈ 88%</span>
+          </div>
+          <div class="bar bar--accent">
+            <span>图形 · 无直通</span>
+            <span class="bar__track"><span class="bar__fill" style="width:12%"></span></span>
+            <span class="bar__val">软件渲染</span>
+          </div>
+          <div class="bar">
+            <span>图形 · A 卡直通</span>
+            <span class="bar__track"><span class="bar__fill" style="width:94%"></span></span>
+            <span class="bar__val">≈ 94%</span>
+          </div>
+        </div>
+        <p class="table-note">
+          也就是说：<strong>用它跑 Xcode、编译、iOS 自动化测试，完全够；用它剪片、玩游戏，必须直通。</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 关键配置 ============ -->
+<section class="section section--dark">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">配置</p>
+        <h2>一条命令里最容易错的四件事</h2>
+        <p class="lead" style="margin-top:16px">
+          网上教程大多能跑，但四个参数决定它稳不稳。
+        </p>
+        <ol class="steps" style="margin-top:24px">
+          <li><div><strong>CPU 型号</strong><br>必须显式声明成 Intel 家族（Penryn / Haswell-noTSX），并带 <span class="code-inline">kvm=on</span>。AMD 宿主尤其不能省。</div></li>
+          <li><div><strong>网卡型号</strong><br>iServices 认的是内建 en0。用 <span class="code-inline">e1000e</span> 比 virtio-net 更容易拿到 en0，虽然慢一点。</div></li>
+          <li><div><strong>OVMF 变量盘</strong><br>要一对：只读的 CODE 与可写的 VARS。VARS 丢了就得重装，记得备份。</div></li>
+          <li><div><strong>SMC 设备</strong><br><span class="code-inline">isa-applesmc</span> 必须挂上，key 在 OSX-KVM 仓库里自带，不要自己编。</div></li>
+        </ol>
+      </div>
+      <div class="reveal">
+        <div class="card" style="background:transparent">
+          <p class="card__title">最小可启动参数（OSX-KVM 风格）</p>
+          <pre><code>qemu-system-x86_64 \
+  -enable-kvm -machine q35,accel=kvm \
+  -m 8192 -smp 8,sockets=1,cores=8,threads=1 \
+  -cpu Penryn,kvm=on,vendor=GenuineIntel,+invtsc \
+  -device isa-applesmc,osk="$(cat osk.txt)" \
+  -drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
+  -drive if=pflash,format=raw,file=OVMF_VARS.fd \
+  -device virtio-blk-pci,drive=SystemDisk \
+  -netdev user,id=net0,hostfwd=tcp::2222-:22 \
+  -device e1000e,netdev=net0 \
+  -device qemu-xhci -device usb-kbd -device usb-tablet \
+  -display none -vnc :1</code></pre>
+          <p class="card__foot">
+            <span>仅示意，实际用仓库脚本</span>
+            <span>Q35 + OVMF 是 macOS 的唯一稳定组合</span>
+          </p>
+        </div>
+        <div class="callout callout--warn" style="margin-top:16px">
+          <strong>别用 i440fx。</strong>macOS 在 Q35 上才能正常处理 PCIe 拓扑与电源管理，
+          i440fx 会带来一堆找不到原因的睡眠与 USB 问题。
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GPU 直通 ============ -->
+<section class="section">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:32px">
+      <p class="eyebrow">直通</p>
+      <h2>想把显卡塞进去，先看这张表</h2>
+      <p class="lead" style="max-width:44em;margin-top:16px">
+        直通（VFIO）是把整张卡从宿主手里夺走，交给虚拟机独占。macOS 拿到的是真卡，
+        所以能加载原生驱动——但前提是这张卡在 macOS 里本来就免驱。
+      </p>
+    </div>
+
+    <div class="table-wrap reveal">
+      <table>
+        <thead>
+          <tr>
+            <th>显卡</th>
+            <th>直通可行性</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>AMD RX 580 / 6600 / 6800 XT</td>
+            <td><span class="badge badge--ok">可行</span></td>
+            <td>macOS 原生免驱，直通后接近物理机；部分型号需要 vendor-reset 才能在重启后恢复</td>
+          </tr>
+          <tr>
+            <td>AMD RX 6700 / 6750</td>
+            <td><span class="badge badge--patch">需 NootRX</span></td>
+            <td>虚拟机里注入 kext 比裸机麻烦，成功率低一些</td>
+          </tr>
+          <tr>
+            <td>AMD RX 7900 XTX（Navi 3x）</td>
+            <td><span class="badge badge--none">无意义</span></td>
+            <td>macOS 没有驱动，直通进去也只是块砖</td>
+          </tr>
+          <tr>
+            <td>NVIDIA GTX 16 / RTX 20–50</td>
+            <td><span class="badge badge--none">基本没戏</span></td>
+            <td>NullMoth 是<strong>裸机驱动</strong>，依赖 GSP 固件与 IOMMU 之外的直连，虚拟机里通常起不来</td>
+          </tr>
+          <tr>
+            <td>NVIDIA Kepler（GTX 780）</td>
+            <td><span class="badge badge--partial">老系统可用</span></td>
+            <td>只能在 Big Sur 及更早版本，配合 OCLP 补丁</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">
+      直通的前提：主板开启 VT-d / AMD-Vi，内核带 <span class="code-inline">iommu=pt</span>，
+      显卡独占一个 IOMMU 分组。显卡和 USB 控制器分在同一组是最常见的翻车点。
+    </p>
+  </div>
+</section>
+
+<!-- ============ 项目 ============ -->
+<section class="section section--sunken">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:32px">
+      <p class="eyebrow">项目</p>
+      <h2>五个够用的选择</h2>
+    </div>
+
+    <div class="grid grid--3">
+      <div class="card card--pad-lg reveal">
+        <p class="card__title">OSX-KVM <small>23.8k ★</small></p>
+        <p class="card__body">
+          最老牌的一套脚本，QEMU + OpenCore，README 写明支持 Monterey / Ventura / Sonoma。
+          文档最全，出问题最容易搜到答案；官方只提供付费支持，issue 区基本关闭。
+        </p>
+        <p class="card__foot">
+          <span class="badge badge--slow">维护放缓</span>
+          <span>2026-01</span>
+        </p>
+      </div>
+      <div class="card card--pad-lg reveal">
+        <p class="card__title">Docker-OSX <small>53.0k ★</small></p>
+        <p class="card__body">
+          把 OSX-KVM 包成容器，一行 <span class="code-inline">docker run</span> 起一台 macOS。
+          适合 CI、自动化测试、快速验证；不适合日常用，图形走 VNC。
+        </p>
+        <p class="card__foot">
+          <span class="badge badge--slow">维护放缓</span>
+          <span>2025-11</span>
+        </p>
+      </div>
+      <div class="card card--pad-lg reveal">
+        <p class="card__title">quickemu <small>16.6k ★</small></p>
+        <p class="card__body">
+          一条 <span class="code-inline">quickemu --vm macos-sonoma.conf</span> 搞定，
+          自动下载安装镜像、生成配置。上手最快，定制空间最小。
+        </p>
+        <p class="card__foot">
+          <span class="badge badge--ok">活跃</span>
+          <span>2026-10</span>
+        </p>
+      </div>
+      <div class="card card--pad-lg reveal">
+        <p class="card__title">OpenCore-ISO <small>871 ★</small></p>
+        <p class="card__body">
+          专门为 Proxmox VE 与 QEMU/KVM 做的 OpenCore 启动镜像，
+          从 10.4 Tiger 一路覆盖到 macOS 26，不需要改 OVMF、不需要内核补丁，
+          AMD 宿主也能用。2026 年最省事的方案。
+        </p>
+        <p class="card__foot">
+          <span class="badge badge--ok">活跃</span>
+          <span>2026-08</span>
+        </p>
+      </div>
+      <div class="card card--pad-lg reveal">
+        <p class="card__title">osx-proxmox-next <small>287 ★</small></p>
+        <p class="card__body">
+          Proxmox 9 上一条命令建虚拟机，带 TUI 向导：选版本、配 CPU、
+          设内存磁盘，剩下的它来做。适合已经有 PVE 的人。
+        </p>
+        <p class="card__foot">
+          <span class="badge badge--ok">活跃</span>
+          <span>2026-10</span>
+        </p>
+      </div>
+      <div class="card card--pad-lg reveal">
+        <p class="card__title">UTM / VirtualBuddy <small>36.6k / 8.9k ★</small></p>
+        <p class="card__body">
+          走 Apple 的 Virtualization.framework，性能接近原生、有 Metal，
+          但<strong>只能跑在 Apple Silicon 上</strong>。它们不是黑苹果，是「有 Mac 之后怎么多开」。
+        </p>
+        <p class="card__foot">
+          <span class="badge badge--plain">仅 Apple 硬件</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 结论 ============ -->
+<section class="section section--dark">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">判断</p>
+        <h2>什么时候该选 KVM</h2>
+      </div>
+      <div class="stack-lg reveal">
+        <div class="card" style="background:transparent">
+          <p class="card__title">选 KVM，如果</p>
+          <p class="card__body">
+            你只是想试试 macOS / 跑 Xcode / 做 iOS 自动化测试 / 在一台服务器上同时跑三个系统。
+            零硬件成本，装坏了删掉重来。
+          </p>
+        </div>
+        <div class="card" style="background:transparent">
+          <p class="card__title">别选 KVM，如果</p>
+          <p class="card__body">
+            你要剪视频、要 Metal、要 AirDrop、要一台能日常用的机器。
+            直通能救一部分，但每多一层虚拟化，就多一个找不到原因的问题。
+          </p>
+        </div>
+        <div class="callout">
+          <strong>一个常被忽略的点：</strong>KVM 里跑的也是 x86 版 macOS，
+          所以它和裸机黑苹果共享同一个天花板——<strong>26.7</strong>。虚拟机不能让你绕过 macOS 27 的架构门槛。
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 来源 ============ -->
+<section class="section section--tight">
+  <div class="wrap wrap--text">
+    <div class="sources reveal">
+      <p class="caption">来源（访问于 2026-10-29）</p>
+      <ol>
+        <li>kholia/OSX-KVM README（Monterey / Ventura / Sonoma；付费支持）— 最后提交 2026-01-26，23.8k ★</li>
+        <li>sickcodes/Docker-OSX — 53.0k ★，最后提交 2025-11-11</li>
+        <li>quickemu-project/quickemu — 16.6k ★，最后提交 2026-10-28</li>
+        <li>LongQT-sea/OpenCore-ISO（支持 Mac OS X 10.4 至 macOS 26，Proxmox VE / QEMU-KVM）— 871 ★，最后提交 2026-08-18</li>
+        <li>lucid-fabrics/osx-proxmox-next — 287 ★，最后提交 2026-10-25</li>
+        <li>utmapp/UTM（仅 Apple Silicon 宿主）、insidegui/VirtualBuddy — 均 2026-10 更新</li>
+        <li>CSDN / 黑苹果屋的 PVE 实践帖（Q35 + OVMF、GPU 直通 IOMMU 分组）— 2026 年</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <h4>关于本站</h4>
+        <p class="small" style="line-height:1.8">
+          一份关于 2026 年 10 月黑苹果现状的静态档案。所有数据来自 GitHub API 快照、
+          项目官方 README 与中文技术媒体的交叉核对，每条结论都标了来源与时间。
+        </p>
+      </div>
+      <div>
+        <h4>平台</h4>
+        <ul>
+          <li><a href="arm.html">ARM 移植</a></li>
+          <li><a href="intel.html">Intel 平台</a></li>
+          <li><a href="amd.html">AMD 平台</a></li>
+          <li><a href="gpu.html">显卡</a></li>
+          <li><a href="vm.html">虚拟机 / KVM</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>资料</h4>
+        <ul>
+          <li><a href="data.html">硬件矩阵</a></li>
+          <li><a href="data.html#tab=projects">项目图谱</a></li>
+          <li><a href="data.html#tab=dead">已死项目</a></li>
+          <li><a href="data.html#tab=dead">取证纠错</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>声明</h4>
+        <ul>
+          <li>数据截止 2026-10-29</li>
+          <li>star 数为当日快照</li>
+          <li>在非 Apple 硬件运行 macOS 可能违反 Apple 软件许可协议</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>黑苹果配置全景 · 2026 年 10 月版</span>
+      <span>静态站点，无框架、无 CDN、无追踪</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/nav.js"></script>
+</body>
+</html>

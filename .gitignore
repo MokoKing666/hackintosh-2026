@@ -1,0 +1,8 @@
+# 本地工具与项目数据，不进仓库
+.workbuddy-ai/
+.shots/
+__pycache__/
+*.pyc
+ghuser.json
+.DS_Store
+Thumbs.db

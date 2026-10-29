@@ -1,0 +1,8 @@
+/* fonts.css — 由 tools/subset_fonts.py 自动生成，请勿手改 */
+/* 源字体：MiSans（本地全量 woff2 子集化，字符集取自站点实际内容） */
+@font-face{font-family:"MiSans";font-style:normal;font-weight:200;font-display:swap;src:url("../fonts/MiSans-200.woff2") format("woff2")}
+@font-face{font-family:"MiSans";font-style:normal;font-weight:300;font-display:swap;src:url("../fonts/MiSans-300.woff2") format("woff2")}
+@font-face{font-family:"MiSans";font-style:normal;font-weight:400;font-display:swap;src:url("../fonts/MiSans-400.woff2") format("woff2")}
+@font-face{font-family:"MiSans";font-style:normal;font-weight:500;font-display:swap;src:url("../fonts/MiSans-500.woff2") format("woff2")}
+@font-face{font-family:"MiSans";font-style:normal;font-weight:600;font-display:swap;src:url("../fonts/MiSans-600.woff2") format("woff2")}
+@font-face{font-family:"MiSans";font-style:normal;font-weight:700;font-display:swap;src:url("../fonts/MiSans-700.woff2") format("woff2")}

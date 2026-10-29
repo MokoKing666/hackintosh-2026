@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>配置生成器 · 这套件能不能装 | 黑苹果配置全景 2026</title>
+<meta name="description" content="选 CPU、显卡、网卡、音频方案与目标系统，实时给出黑苹果可行性结论、系统上限、必做清单与风险清单。">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav__inner">
+    <a class="nav__logo" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="7" y="7" width="10" height="10" rx="2.5"/>
+        <path d="M10 3v3M14 3v3M10 18v3M14 18v3M3 10h3M3 14h3M18 10h3M18 14h3" stroke-linecap="round"/>
+      </svg>
+      黑苹果全景
+    </a>
+    <button class="nav__toggle" aria-expanded="false" aria-label="展开导航"><span></span></button>
+    <nav class="nav__menu">
+      <a class="nav__link" href="index.html">总览</a>
+      <a class="nav__link" href="arm.html">ARM</a>
+      <a class="nav__link" href="intel.html">Intel</a>
+      <a class="nav__link" href="amd.html">AMD</a>
+      <a class="nav__link" href="gpu.html">显卡</a>
+      <a class="nav__link" href="vm.html">虚拟机</a>
+      <a class="nav__link" href="periph.html">外设</a>
+      <a class="nav__link" href="data.html">资料库</a>
+      <a class="nav__cta" href="builder.html">配置生成器</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">配置生成器</p>
+    <h1>先算一遍，再拆机箱</h1>
+    <p class="lead">
+      选完硬件，右边会告诉你三件事：能不能装、必须做什么、会失去什么。
+      每一项都标了依据，不是拍脑袋。
+    </p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="wrap">
+    <div class="builder">
+
+      <!-- ============ 控制区 ============ -->
+      <div class="builder__controls">
+        <div class="field">
+          <label for="f-platform">平台</label>
+          <select id="f-platform">
+            <option value="intel">Intel x86</option>
+            <option value="amd">AMD x86</option>
+            <option value="arm">ARM</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="f-cpu" id="l-cpu">CPU</label>
+          <select id="f-cpu"></select>
+        </div>
+
+        <div class="field" id="field-gpu">
+          <label for="f-gpu">显卡 / 核显</label>
+          <select id="f-gpu"></select>
+        </div>
+
+        <div class="field">
+          <label for="f-wifi">无线网卡</label>
+          <select id="f-wifi"></select>
+        </div>
+
+        <div class="field">
+          <label for="f-audio">音频方案</label>
+          <select id="f-audio"></select>
+        </div>
+
+        <div class="field">
+          <label for="f-os">目标系统</label>
+          <select id="f-os"></select>
+        </div>
+
+        <div class="builder__actions">
+          <button class="btn btn--primary" id="btn-copy">复制清单</button>
+          <button class="btn btn--quiet" id="btn-reset">重置</button>
+        </div>
+
+        <p class="caption" style="margin:0">
+          选择状态会写进 URL，可以直接把链接发给别人复现同一份结论。
+        </p>
+      </div>
+
+      <!-- ============ 结果区 ============ -->
+      <div class="builder__result">
+        <div class="verdict" id="verdict">
+          <div>
+            <p class="verdict__label">结论</p>
+            <p class="verdict__title" id="verdict-title">—</p>
+            <p class="verdict__sub" id="verdict-sub"></p>
+            <div style="margin-top:16px">
+              <span class="badge badge--ok" id="verdict-badge">—</span>
+            </div>
+          </div>
+          <div class="verdict__cap">
+            系统上限
+            <b id="os-cap">—</b>
+          </div>
+        </div>
+
+        <div class="checklist checklist--block" id="card-block" hidden>
+          <h4><span class="dot"></span>阻断项 <span class="mono faint" id="count-block" style="margin-left:auto"></span></h4>
+          <ul id="list-block"></ul>
+        </div>
+
+        <div class="checklist checklist--must" id="card-must">
+          <h4><span class="dot"></span>必做清单 <span class="mono faint" id="count-must" style="margin-left:auto"></span></h4>
+          <ul id="list-must"></ul>
+        </div>
+
+        <div class="checklist checklist--risk" id="card-risk">
+          <h4><span class="dot"></span>风险与代价 <span class="mono faint" id="count-risk" style="margin-left:auto"></span></h4>
+          <ul id="list-risk"></ul>
+        </div>
+
+        <div class="callout">
+          <strong>怎么用这份清单：</strong>从上往下做。阻断项不解决，后面的补丁都白费；
+          必做清单是「不做就起不来」，风险清单是「起来了也不好用」。装完再回来对一遍。
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ 规则说明 ============ -->
+<section class="section section--dark">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">规则</p>
+        <h2>生成器背后的四条硬约束</h2>
+        <p class="lead" style="margin-top:16px">
+          它不会给出「Navi 3x + macOS 27 可行」这种结论，因为下面四条是前置闸门，不是并列建议。
+        </p>
+      </div>
+      <div class="stack-lg reveal">
+        <div class="card" style="background:transparent">
+          <p class="card__title">① 平台闸门</p>
+          <p class="card__body">
+            Intel / AMD 的系统上限写死 26.7.x；ARM 按具体设备给上限，
+            Snapintosh 到 27、RK3588 到 27.2 Beta，骁龙 X Elite 与 N1x 直接判不可行。
+          </p>
+        </div>
+        <div class="card" style="background:transparent">
+          <p class="card__title">② 版本闸门</p>
+          <p class="card__body">
+            目标系统超过上限就阻断。macOS 27 对 x86 是硬阻断，不是「可能有问题」。
+          </p>
+        </div>
+        <div class="card" style="background:transparent">
+          <p class="card__title">③ 图形互斥</p>
+          <p class="card__body">
+            独显优先于核显。Navi 3x、RDNA3 APU、Intel Arc 直接阻断；
+            N 卡走 NullMoth 分支时，会额外检查 ReBAR、BAR 尺寸与 IONDRVSupport。
+          </p>
+        </div>
+        <div class="card" style="background:transparent">
+          <p class="card__title">④ 冲突扫描</p>
+          <p class="card__body">
+            AMD CPU × N 卡的 PAT 冲突、Tahoe 必须移除 WhateverGreen、
+            AppleHDA 移除后的音频三选一，都在这一步触发。
+          </p>
+        </div>
+        <div class="callout">
+          <strong>被判「装不了」也别急着关页面：</strong>如果只是想在 macOS 里跑 Xcode 或做测试，
+          在 x86 宿主上用 QEMU/KVM 起一台虚拟机就够了，不需要任何兼容硬件。
+          见 <a href="vm.html">虚拟机 / KVM 篇</a>。
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 来源 ============ -->
+<section class="section section--tight">
+  <div class="wrap wrap--text">
+    <div class="sources reveal">
+      <p class="caption">规则依据</p>
+      <ol>
+        <li>系统边界：WWDC26 与 MacRumors 2026-09-25 报道，OCLP 团队无 macOS 27 适配计划。</li>
+        <li>硬件结论：Dortania GPU Buyers Guide、AMD-OSX/AMD_Vanilla、各项目 README（详见资料库页）。</li>
+        <li>N 卡参数：nullmoth/nvidia-macos-driver v2.6.4 的 README 与 TROUBLESHOOTING。</li>
+        <li>ARM 平台：Snapintosh README、UniXNU 文档、@realNyarime 2026-10-28 推文。</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <h4>关于本站</h4>
+        <p class="small" style="line-height:1.8">
+          一份关于 2026 年 10 月黑苹果现状的静态档案。所有数据来自 GitHub API 快照、
+          项目官方 README 与中文技术媒体的交叉核对，每条结论都标了来源与时间。
+        </p>
+      </div>
+      <div>
+        <h4>平台</h4>
+        <ul>
+          <li><a href="arm.html">ARM 移植</a></li>
+          <li><a href="intel.html">Intel 平台</a></li>
+          <li><a href="amd.html">AMD 平台</a></li>
+          <li><a href="gpu.html">显卡</a></li>
+          <li><a href="vm.html">虚拟机 / KVM</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>资料</h4>
+        <ul>
+          <li><a href="data.html">硬件矩阵</a></li>
+          <li><a href="data.html#tab=projects">项目图谱</a></li>
+          <li><a href="data.html#tab=dead">已死项目</a></li>
+          <li><a href="data.html#tab=dead">取证纠错</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>声明</h4>
+        <ul>
+          <li>数据截止 2026-10-29</li>
+          <li>star 数为当日快照</li>
+          <li>在非 Apple 硬件运行 macOS 可能违反 Apple 软件许可协议</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>黑苹果配置全景 · 2026 年 10 月版</span>
+      <span>静态站点，无框架、无 CDN、无追踪</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/data/hw.js"></script>
+<script src="assets/js/rules.js"></script>
+<script src="assets/js/nav.js"></script>
+<script src="assets/js/builder.js"></script>
+</body>
+</html>

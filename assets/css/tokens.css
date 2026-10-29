@@ -1,0 +1,133 @@
+/* ============================================================
+   tokens.css — 设计令牌
+   浅色为默认作用域；深色通过 .section--dark 局部覆盖（不是全局暗色模式）
+   ============================================================ */
+
+:root {
+  /* ---- 基础色阶 ---- */
+  --paper-0: #ffffff;
+  --paper-25: #fbfbfd;
+  --paper-50: #f5f5f7;
+  --paper-100: #eeeef0;
+  --ink-900: #1d1d1f;
+  --ink-700: #424245;
+  --ink-600: #6e6e73;
+  --ink-400: #86868b;
+  --ink-300: #b0b0b5;
+
+  /* ---- 语义（浅色段） ---- */
+  --bg-page: var(--paper-25);
+  --bg-surface: var(--paper-0);
+  --bg-sunken: var(--paper-50);
+  --fg-primary: var(--ink-900);
+  --fg-secondary: var(--ink-600);
+  --fg-tertiary: var(--ink-400);
+  --border-hair: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --accent: #0071e3;
+  --accent-hover: #0064c8;
+  --accent-soft: rgba(0, 113, 227, 0.08);
+
+  /* ---- 状态色 ---- */
+  --st-ok: #1d8a4e;
+  --st-ok-bg: rgba(29, 138, 78, 0.08);
+  --st-patch: #2563eb;
+  --st-patch-bg: rgba(37, 99, 235, 0.08);
+  --st-partial: #b26b00;
+  --st-partial-bg: rgba(178, 107, 0, 0.09);
+  --st-none: #c0392b;
+  --st-none-bg: rgba(192, 57, 43, 0.08);
+  --st-exp: #7b4fd8;
+  --st-exp-bg: rgba(123, 79, 216, 0.09);
+
+  /* ---- 字体 ---- */
+  --font-sans: "MiSans", -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", "Cascadia Code", Consolas,
+    "MiSans", monospace;
+
+  /* ---- 字号阶梯（CJK 放大行高） ---- */
+  --fs-display: clamp(2.5rem, 6vw, 4.25rem); /* 40 → 68 */
+  --fs-h1: clamp(2rem, 4vw, 3rem); /* 32 → 48 */
+  --fs-h2: 1.75rem; /* 28 */
+  --fs-h3: 1.25rem; /* 20 */
+  --fs-h4: 1.0625rem; /* 17 */
+  --fs-body: 1rem; /* 16 */
+  --fs-sm: 0.875rem; /* 14 */
+  --fs-cap: 0.75rem; /* 12 */
+  --fs-mono: 0.8125rem; /* 13 */
+
+  --lh-display: 1.12;
+  --lh-h1: 1.2;
+  --lh-h2: 1.35;
+  --lh-h3: 1.5;
+  --lh-body: 1.8;
+  --lh-sm: 1.75;
+  --lh-cap: 1.6;
+
+  --tr-display: -0.02em;
+  --tr-h1: -0.015em;
+  --tr-h2: -0.01em;
+  --tr-cap: 0.02em;
+
+  /* ---- 字重（同屏最多 3 档） ---- */
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  /* ---- 间距 ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+  --section-y: clamp(64px, 8vw, 120px);
+
+  /* ---- 圆角 ---- */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+
+  /* ---- 容器 ---- */
+  --w-text: 980px;
+  --w-wide: 1180px;
+  --nav-h: 52px;
+
+  /* ---- 动效 ---- */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur: 240ms;
+}
+
+/* ---- 深色段：只覆盖语义层，不动基础色阶 ---- */
+.section--dark {
+  --bg-page: #0b0b0f;
+  --bg-surface: #16161a;
+  --bg-sunken: #101014;
+  --fg-primary: #f5f5f7;
+  --fg-secondary: #a1a1a6;
+  --fg-tertiary: #86868b;
+  --border-hair: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --accent: #2997ff;
+  --accent-hover: #5ab0ff;
+  --accent-soft: rgba(41, 151, 255, 0.12);
+  --st-ok: #4fd07f;
+  --st-ok-bg: rgba(79, 208, 127, 0.12);
+  --st-patch: #6ba4ff;
+  --st-patch-bg: rgba(107, 164, 255, 0.12);
+  --st-partial: #e0a34a;
+  --st-partial-bg: rgba(224, 163, 74, 0.14);
+  --st-none: #ff6b5e;
+  --st-none-bg: rgba(255, 107, 94, 0.12);
+  --st-exp: #a98bf5;
+  --st-exp-bg: rgba(169, 139, 245, 0.14);
+  background: var(--bg-page);
+  color: var(--fg-primary);
+}

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intel 平台 · 末代 x86 的余量 | 黑苹果配置全景 2026</title>
+<meta name="description" content="Intel 黑苹果 2026 现状：9~10 代开箱可用，12~14 代需 CPUID 伪装，UHD 630 是最后的免驱核显，Iris Xe 有 WhateverXe 与 XeGfx 两条实验线。">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav__inner">
+    <a class="nav__logo" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="7" y="7" width="10" height="10" rx="2.5"/>
+        <path d="M10 3v3M14 3v3M10 18v3M14 18v3M3 10h3M3 14h3M18 10h3M18 14h3" stroke-linecap="round"/>
+      </svg>
+      黑苹果全景
+    </a>
+    <button class="nav__toggle" aria-expanded="false" aria-label="展开导航"><span></span></button>
+    <nav class="nav__menu">
+      <a class="nav__link" href="index.html">总览</a>
+      <a class="nav__link" href="arm.html">ARM</a>
+      <a class="nav__link" href="intel.html">Intel</a>
+      <a class="nav__link" href="amd.html">AMD</a>
+      <a class="nav__link" href="gpu.html">显卡</a>
+      <a class="nav__link" href="vm.html">虚拟机</a>
+      <a class="nav__link" href="periph.html">外设</a>
+      <a class="nav__link" href="data.html">资料库</a>
+      <a class="nav__cta" href="builder.html">配置生成器</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">Intel</p>
+    <h1>末代 x86 的余量</h1>
+    <p class="lead">
+      Intel 这条路走了十七年，现在停在 26.7。好消息是它足够成熟——成熟到 9~10 代平台至今仍是
+      「一次点亮」的代名词；坏消息是 12 代以后每一代都要打补丁，而核显早已没有官方支持。
+    </p>
+  </div>
+</section>
+
+<!-- ============ 代际矩阵 ============ -->
+<section class="section section--tight">
+  <div class="wrap">
+    <div class="table-wrap reveal">
+      <table>
+        <thead>
+          <tr>
+            <th>代际</th>
+            <th>代表型号</th>
+            <th>芯片组</th>
+            <th>CPU 侧</th>
+            <th>核显</th>
+            <th>结论</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>9 代</strong></td>
+            <td>i5-9400 / i7-9700K / i9-9900K</td>
+            <td>Z390 / B365</td>
+            <td>原生</td>
+            <td>UHD 630 免驱</td>
+            <td><span class="badge badge--ok">开箱可用</span></td>
+          </tr>
+          <tr>
+            <td><strong>10 代</strong></td>
+            <td>i5-10400 / i7-10700 / i9-10900K</td>
+            <td>Z490 / B460 / H410</td>
+            <td>原生</td>
+            <td>UHD 630 免驱</td>
+            <td><span class="badge badge--ok">开箱可用</span></td>
+          </tr>
+          <tr>
+            <td><strong>11 代</strong></td>
+            <td>i5-11400 / i7-11700</td>
+            <td>Z590 / B560</td>
+            <td>原生</td>
+            <td>UHD 750 无解</td>
+            <td><span class="badge badge--patch">需补丁</span></td>
+          </tr>
+          <tr>
+            <td><strong>12 代</strong></td>
+            <td>i3-12100 / i5-12400 / i5-12600K</td>
+            <td>Z690 / B660 / H610</td>
+            <td>需 CPUID 伪装</td>
+            <td>UHD 730 靠 WhateverXe</td>
+            <td><span class="badge badge--patch">需补丁</span></td>
+          </tr>
+          <tr>
+            <td><strong>13 / 14 代</strong></td>
+            <td>i5-13600K / i7-14700K / i9-14900K</td>
+            <td>Z790 / B760</td>
+            <td>需 CPUID 伪装</td>
+            <td>UHD 770 靠 WhateverXe</td>
+            <td><span class="badge badge--patch">需补丁</span></td>
+          </tr>
+          <tr>
+            <td><strong>Core Ultra 200S</strong></td>
+            <td>Ultra 7 265K / Ultra 9 285K</td>
+            <td>Z890</td>
+            <td>需 CPUID 伪装</td>
+            <td>Xe-LPG 仅 XeGfx 实验</td>
+            <td><span class="badge badge--exp">实验</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">
+      所有 Intel 平台的系统上限都是 <strong>macOS 26.7.x</strong>。macOS 27 起不再包含任何 Intel 机型的内核驱动。
+    </p>
+  </div>
+</section>
+
+<!-- ============ CPUID 伪装 ============ -->
+<section class="section section--sunken">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">关键补丁</p>
+        <h2>12 代以后为什么要「假装自己是 10 代」</h2>
+        <p class="lead" style="margin-top:16px">
+          macOS 的电源管理与调度代码里，写死了它认识的 CPU 家族。混合架构（P 核 + E 核）
+          不在这个名单里，于是内核一启动就会算错核心拓扑。
+        </p>
+        <p class="small muted" style="margin-top:16px">
+          解决办法是把 CPUID 报成 Comet Lake，同时用 <span class="code-inline">ProvideCurrentCpuInfo</span>
+          告诉内核真实的核心布局。副作用是部分依赖真实 CPUID 的软件（少数跑分、虚拟机）会认错硬件。
+        </p>
+      </div>
+      <div class="stack-lg reveal">
+        <div class="card">
+          <p class="card__title">config.plist 里要改的两处</p>
+          <pre><code>Kernel → Emulate
+  Cpuid1Data   &lt;55 06 0A 00 00 00 00 00 …&gt;   # 伪装成 Comet Lake
+  Cpuid1Mask   &lt;FF FF FF FF 00 00 00 00 …&gt;
+
+Kernel → Quirks
+  ProvideCurrentCpuInfo = true               # 告诉内核真实拓扑</code></pre>
+          <p class="card__foot">
+            <span>适用于 12 / 13 / 14 代</span>
+            <span>OpenCore 1.0.8 验证</span>
+          </p>
+        </div>
+        <div class="callout">
+          <strong>别省这一步：</strong>不伪装也能进系统，但会出现核心数识别错误、睡眠立刻醒、
+          以及「用着用着突然重启」。这类问题很难归因，先检查 CPUID。
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 核显 ============ -->
+<section class="section">
+  <div class="wrap">
+    <p class="eyebrow reveal">核显</p>
+    <h2 class="reveal">UHD 630 是最后一代免驱核显</h2>
+    <p class="lead reveal" style="max-width:44em;margin:16px 0 32px">
+      这句话在 2026 年 10 月之前是绝对的。现在有了两条实验分支，但它仍然是最稳的那一个。
+    </p>
+
+    <div class="grid grid--2">
+      <div class="card card--pad-lg reveal">
+        <p class="card__title">WhateverXe <small>b00t0x · WEX 0.6.1</small></p>
+        <p class="card__body">
+          基于 WhateverGreen 派生，给 Xe-LP 架构的核显补上 Metal 与 OpenCL。
+          支持 Tiger Lake-U（48/80EU）、Alder Lake-N、ADL-H 96EU、ADL-S 的 UHD 770、ADL-P / RPL-P。
+          不支持 Meteor Lake 的 Xe-LPG，也不支持 Xe2。
+        </p>
+        <p class="card__body" style="margin-top:12px">
+          硬性要求：必须用配套的<strong>已签名图形包</strong>（0.3.2）装到 /Library 并重建 AuxKC，
+          SIP 固定 <span class="code-inline">0x803</span>，还要用 AMFIPass v1.4.1 Mod——
+          上游版本不认这条签名链。
+        </p>
+        <p class="card__foot">
+          <span class="badge badge--exp">实验</span>
+          <span>FairPlay 不支持</span>
+          <span>DP 重连可能死机</span>
+        </p>
+      </div>
+
+      <div class="card card--pad-lg reveal">
+        <p class="card__title">XeGfx <small>watchthelight-labs · 0.0.46</small></p>
+        <p class="card__body">
+          思路完全不同：把 FreeBSD 的 drm-kmod i915 驱动搬进 XNU，配 Mesa ANV 做 Metal-to-Vulkan 翻译，
+          GuC 固件直接链进 kext。目标是最新的 Xe-LPG / Xe2 架构。
+        </p>
+        <p class="card__body" style="margin-top:12px">
+          已在 Arrow Lake-S/HX 与 Meteor Lake 上跑通，实测系统 26.7.1 / 26.7.2。
+          代价是它还是测试驱动，有未决的 panic（I-116），桌面合成走拷贝、明显偏慢。
+        </p>
+        <p class="card__foot">
+          <span class="badge badge--exp">实验</span>
+          <span>16 ★</span>
+          <span>有未决 panic</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="callout callout--warn reveal" style="margin-top:24px">
+      <strong>两条线共同的代价：</strong>FairPlay 受保护的视频放不了。这意味着 Apple TV+、部分 Apple Music 内容、
+      以及依赖 FairPlay 的网页播放器会直接失败。当生产力用之前，先想清楚这一点。
+    </div>
+  </div>
+</section>
+
+<!-- ============ SMBIOS ============ -->
+<section class="section section--dark">
+  <div class="wrap">
+    <div class="split">
+      <div class="reveal">
+        <p class="eyebrow">SMBIOS</p>
+        <h2>只剩四个机型可以冒充</h2>
+        <p class="lead" style="margin-top:16px">
+          macOS 26 官方保留的 Intel 机型只剩四款，黑苹果能用的 SMBIOS 也就只有这四个。
+          选错会直接影响 iServices 与电源管理。
+        </p>
+      </div>
+      <div class="reveal">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>SMBIOS</th>
+                <th>机型</th>
+                <th>适用场景</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono">MacPro7,1</td>
+                <td>Mac Pro (2019)</td>
+                <td>台式机首选，无核显也能用，内存告警需 RestrictEvents 屏蔽</td>
+              </tr>
+              <tr>
+                <td class="mono">iMac20,1 / 20,2</td>
+                <td>iMac (2020)</td>
+                <td>有核显的桌面平台，需要正确的 ig-platform-id</td>
+              </tr>
+              <tr>
+                <td class="mono">MacBookPro16,1</td>
+                <td>MBP 16" (2019)</td>
+                <td>笔记本 / 独显机器</td>
+              </tr>
+              <tr>
+                <td class="mono">MacBookPro16,3</td>
+                <td>MBP 13" 4×TB3 (2020)</td>
+                <td>13 寸核显本</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">四款之外，macOS 26 会直接拒绝启动。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Tahoe 的坑 ============ -->
+<section class="section">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:32px">
+      <p class="eyebrow">Tahoe 特有问题</p>
+      <h2>升到 26 之后，两件事必须先处理</h2>
+    </div>
+
+    <div class="grid grid--2">
+      <div class="card card--pad-lg reveal">
+        <p class="card__title">① WhateverGreen 会导致 panic</p>
+        <p class="card__body">
+          macOS 26 上 WhateverGreen 的 AMD connector patching 会直接引发内核 panic。
+          Dortania 给出的唯一方案是<strong>整个移除 WhateverGreen</strong>，
+          把原来靠它注入的 <span class="code-inline">agdpmod=pikera</span>
+          改成手工 <span class="code-inline">Kernel → Patch</span> 注入。
+        </p>
+        <p class="card__body" style="margin-top:12px">
+          这一条同时影响 Intel 与 AMD 平台，是升级到 Tahoe 后最常见的黑屏原因。
+        </p>
+      </div>
+      <div class="card card--pad-lg reveal">
+        <p class="card__title">② AppleHDA 被移除，AppleALC 失效</p>
+        <p class="card__body">
+          macOS 26 不再自带 AppleHDA.kext，所有依赖它的音频方案一起失效。
+          现在有三条路：SimpleHDA 1.0.0（Lilu 插件恢复原生，首选）、
+          MyKextInstaller 从 KDK 重注、或者退回 VoodooHDA。
+        </p>
+        <p class="card__body" style="margin-top:12px">
+          HDMI / DP / USB 音频不受影响——它们不走 AppleHDA。
+        </p>
+        <p class="card__foot">
+          <a href="periph.html">详见外设页 →</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 来源 ============ -->
+<section class="section section--tight">
+  <div class="wrap wrap--text">
+    <div class="sources reveal">
+      <p class="caption">来源（访问于 2026-10-29）</p>
+      <ol>
+        <li>Dortania OpenCore Install Guide · macOS 26 Tahoe 专页（4 个 SMBIOS、WhateverGreen 移除、AppleHDA 移除）</li>
+        <li>b00t0x/WhateverXe 0.6.1 与 WhateverXe-Graphics 0.3.2 — github.com/b00t0x（2026-10-27）</li>
+        <li>watchthelight-labs/XeGfx 0.0.46 — github.com/watchthelight-labs/XeGfx（2026-10-29）</li>
+        <li>JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe — 2026-10-28</li>
+        <li>acidanthera/OpenCorePkg 1.0.8 Release Notes — 2026-09-27</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <h4>关于本站</h4>
+        <p class="small" style="line-height:1.8">
+          一份关于 2026 年 10 月黑苹果现状的静态档案。所有数据来自 GitHub API 快照、
+          项目官方 README 与中文技术媒体的交叉核对，每条结论都标了来源与时间。
+        </p>
+      </div>
+      <div>
+        <h4>平台</h4>
+        <ul>
+          <li><a href="arm.html">ARM 移植</a></li>
+          <li><a href="intel.html">Intel 平台</a></li>
+          <li><a href="amd.html">AMD 平台</a></li>
+          <li><a href="gpu.html">显卡</a></li>
+          <li><a href="vm.html">虚拟机 / KVM</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>资料</h4>
+        <ul>
+          <li><a href="data.html">硬件矩阵</a></li>
+          <li><a href="data.html#tab=projects">项目图谱</a></li>
+          <li><a href="data.html#tab=dead">已死项目</a></li>
+          <li><a href="data.html#tab=dead">取证纠错</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>声明</h4>
+        <ul>
+          <li>数据截止 2026-10-29</li>
+          <li>star 数为当日快照</li>
+          <li>在非 Apple 硬件运行 macOS 可能违反 Apple 软件许可协议</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>黑苹果配置全景 · 2026 年 10 月版</span>
+      <span>静态站点，无框架、无 CDN、无追踪</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/nav.js"></script>
+</body>
+</html>
