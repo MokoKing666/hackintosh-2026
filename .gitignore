@@ -1,8 +1,13 @@
-# 本地工具与项目数据，不进仓库
-.workbuddy-ai/
-.shots/
-__pycache__/
-*.pyc
-ghuser.json
+node_modules
+dist
+dist-ssr
+coverage
+playwright-report
+test-results
+*.local
+*.tsbuildinfo
 .DS_Store
 Thumbs.db
+.workbuddy-ai/
+.shots/
+.env.local

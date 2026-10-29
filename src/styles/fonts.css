@@ -1,0 +1,25 @@
+/* fonts.css — 由 tools/subset_fonts.py 生成，字符集取自 src 全量文本 */
+
+@font-face {
+  font-family: 'MiSans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/MiSans-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'MiSans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/MiSans-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'MiSans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../assets/fonts/MiSans-600.woff2') format('woff2');
+}

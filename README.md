@@ -1,55 +1,103 @@
 # 黑苹果配置全景 2026
 
-一份关于 2026 年 10 月黑苹果（Hackintosh）现状的静态站点：x86 定格在 macOS 26.7，ARM 四条移植路线同时开跑，N 卡被第三方驱动重新点亮。
+2026 年 10 月的黑苹果现状档案：x86 定格在 macOS 26.7，ARM 四条移植路线同时开跑，N 卡被第三方驱动重新点亮。
 
-**在线访问：https://mokoking666.github.io/hackintosh-2026/**
+**在线站点：https://mokoking666.github.io/hackintosh-2026/**
 
-纯静态，无框架、无 CDN、无追踪，字体本地子集化。
+React + TypeScript + Vite 单页应用，纯静态部署在 GitHub Pages 子路径 `/hackintosh-2026/` 下。
 
-## 页面
+---
 
-| 页面 | 内容 |
-|---|---|
-| `index.html` | 三条结论、2026 大事记时间轴、平台入口 |
-| `arm.html` | UniXNU / Snapintosh / RK3588 / ios-sweet 四条路线 + 证据分级 |
-| `intel.html` | 代际矩阵、CPUID 伪装、Xe 双实验线、仅剩 4 个 SMBIOS |
-| `amd.html` | Vanilla 补丁链、无 Hypervisor 代价、APU 断代 |
-| `gpu.html` | NullMoth 驱动链路、boot-args、AMD 免驱表、官方四代结局 |
-| `vm.html` | QEMU/KVM 三条虚拟化路线、GPU 直通、五个项目 |
-| `periph.html` | 无线四路线、音频三路线、有线、USB/睡眠/iServices |
-| `data.html` | 51 条硬件矩阵 / 86 个项目图谱 / 20 个已死项目 / 8 条取证纠错 |
-| `builder.html` | 配置生成器：选硬件 → 结论 + 系统上限 + 必做/风险/阻断清单 |
+## 这个站解决什么问题
 
-## 本地预览
+网上关于黑苹果的信息有两个毛病：一是过期，二是没有证据。这个站的做法是：
 
-直接双击 `index.html` 即可（`file://` 下字体可正常加载）。或用任意静态服务器：
+1. **每条结论都挂证据**：官方文档 / 上游代码 / 可复现测试 / 社区报告 / 项目方声明 / 推断，六级分开标注。
+2. **六态结论**：已验证可用 / 有条件可用 / 实验性支持 / 尚未验证 / 已知不兼容 / 信息不足。不允许把「不知道」写成「可以」。
+3. **一个数据源**：硬件、项目、结论、纠错全部在 `src/domain/`，页面只负责展示，不允许各页维护互相矛盾的说法。
+4. **配置生成器**是纯函数规则引擎，可单测，输出必做清单、风险与阻断项，并给出替代方案。
 
-```bash
-python -m http.server 8000
-```
+## 技术栈
 
-## 重新构建字体
+| 层       | 选择                                                                 |
+| -------- | -------------------------------------------------------------------- |
+| 框架     | React 19 + TypeScript 5.9（strict + `noUncheckedIndexedAccess`）     |
+| 构建     | Vite 8，`base: '/hackintosh-2026/'`，路由级代码分割                  |
+| 路由     | React Router 7（BrowserRouter + basename），深链接靠 `404.html` 兜底 |
+| 样式     | 全局设计令牌（`src/styles/tokens.css`）+ 单一组件样式表，无 UI 框架  |
+| 数据校验 | Zod 4，启动时校验结构与证据引用                                      |
+| 测试     | Vitest + Testing Library（35 例）、Playwright（30 例）               |
+| 质量     | ESLint 9（flat config）、Prettier                                    |
+| 部署     | GitHub Actions → Pages（artifact 方式）                              |
 
-`assets/fonts/` 里的 6 个 woff2 是 MiSans 的子集（原文件 47MB，子集后约 870KB）。
-改动文案后需要重跑，否则新字会缺字：
+字体：本地 MiSans 子集，三档字重（400/500/600）共约 420KB，`font-display: swap` + 关键两档预载。
 
-```bash
-python tools/subset_fonts.py          # 重新生成
-python tools/subset_fonts.py --check  # 校验缺字
-```
-
-## 规则引擎自测
+## 快速开始
 
 ```bash
-node tools/test_rules.js   # 13 组断言
+npm ci            # 安装依赖（package-lock.json 已锁定）
+npm run dev       # 本地开发
+npm run verify    # 类型检查 + Lint + 单测 + 构建
 ```
 
-## 数据说明
+其他命令：
 
-- 数据截止 **2026-10-29**；star 数与最后提交为当日 GitHub API 快照
-- 结论来源：项目 README、GitHub API、Dortania 指南、中文技术媒体交叉核对
-- 每条兼容性结论在页面底部标注了来源；存疑的流传说法收录在 `data.html` 的「取证纠错」中
+```bash
+npm run typecheck   # tsc -b --force
+npm run lint        # eslint .
+npm run format      # prettier --check .
+npm run test        # vitest run
+npm run e2e         # playwright（会自己起 preview 服务）
+npm run build       # tsc -b && vite build + postbuild
+```
+
+## 目录结构
+
+```
+src/
+  domain/           唯一数据源与规则引擎（纯 TS，不依赖 React）
+    types.ts        领域类型：六态、证据等级、硬件/项目/结论
+    evidence.ts     证据库（43 条，带版本、核验日期、失效标记）
+    hardware.ts     50 条硬件兼容记录
+    projects.ts     86 个项目 + 20 个失效项目
+    claims.ts       30 条结论台账 + 8 条取证纠错
+    boards.ts       主板与插槽（配置生成器用）
+    rules.ts        solve()：平台闸门 → 版本闸门 → CPU → 图形 → 冲突 → 结论
+    validate.ts     Zod 运行时校验 + 证据引用完整性检查
+  components/       Layout、DataTable、VerdictBadge、Evidence、Toolbar…
+  pages/            9 个路由页面
+  styles/           tokens.css / app.css / fonts.css
+e2e/                Playwright 用例
+scripts/            postbuild（生成 404.html）、check-build（子路径自检）
+tools/              MiSans 子集化脚本
+docs/               DESIGN.md（设计令牌与组件规范）、MIGRATION.md、AUDIT.md
+```
+
+## 数据模型要点
+
+- 硬件记录同时承载「展示字段」与「引擎字段」（`cpu.flags`、`gpu.driver`、`arm.bootMethod`），规则引擎不靠字符串比较判断分支。
+- 每条要求与限制都带 `evidenceIds`；`validateDomain()` 会在启动时检查引用是否真实存在。
+- 项目记录把「代码开放度」与「可复现程度」拆成两个维度——有仓库不等于别人能跑起来。
+
+## 部署
+
+推送到 `main` 触发 `.github/workflows/deploy.yml`：类型检查 → Lint → 格式 → 单测 → E2E → 构建 → 子路径自检 → 上传 artifact → 部署 Pages。
+
+Pages 的 Source 需设为 **GitHub Actions**（不是 branch）。仓库名必须保持 `hackintosh-2026`，否则要同步修改 `vite.config.ts` 的 `base`。
+
+本地验证产物：
+
+```bash
+npm run build && node scripts/check-build.mjs
+npx vite preview --port 4173 --host 127.0.0.1
+```
+
+## 更新内容时
+
+1. 改 `src/domain/*`，先补证据再改结论；
+2. 若新增文案字符，重跑 `python tools/subset_fonts.py`，再 `--check` 确认无缺字；
+3. `npm run verify`，推送到 `main` 等 Actions 绿。
 
 ## 免责声明
 
-在非 Apple 硬件上运行 macOS 可能违反 Apple 的软件许可协议，本项目仅作技术资料整理，不提供任何 Apple 二进制文件、EFI 或安装镜像。所有商标归其所有者。
+在非 Apple 硬件上运行 macOS 可能违反 Apple 的软件许可协议。本站只做技术资料整理，**不提供**任何 Apple 二进制、EFI 或安装镜像；所有商标归其所有者。

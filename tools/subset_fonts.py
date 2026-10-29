@@ -4,14 +4,14 @@
 subset_fonts.py — 把 MiSans 全量 woff2（单文件约 4.8MB）子集化为站点实际用到的字符。
 
 用法：
-    python tools/subset_fonts.py            # 生成 assets/fonts/*.woff2 + assets/css/fonts.css
-    python tools/subset_fonts.py --check    # 只检查现有子集是否缺字，不写文件
+    python tools/subset_fonts.py            # 生成 src/assets/fonts/*.woff2 + src/styles/fonts.css
+    python tools/subset_fonts.py --check    # 只检查现有子集是否缺字
 
 策略：
-    1. 扫描 index.html + assets/**/*.{html,css,js}，取出所有出现过的字符
-    2. 并上 ASCII 可打印区 + 中文标点 + 数学符号，防止动态内容缺字
-    3. 按 MiSans 的真实 usWeightClass 映射到 CSS 标准字重（MiSans 的权重值是自定义的）
-    4. 输出 woff2（brotli 压缩），并覆写 OS/2.usWeightClass 让浏览器正确匹配
+    1. 扫描 index.html 与 src/**/*.{ts,tsx,css}，取出所有出现过的字符
+    2. 并上 ASCII、中文标点与常用符号，防止动态内容缺字
+    3. 只保留 400 / 500 / 600 三档（设计令牌只用这三档字重）
+    4. 覆写 OS/2.usWeightClass，让浏览器按 CSS 字重正确匹配，避免伪粗体
 """
 
 import argparse
@@ -24,37 +24,34 @@ from fontTools.subset import Subsetter, Options
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR = r"D:\67262\Downloads\woff2"
-OUT_DIR = os.path.join(ROOT, "assets", "fonts")
-CSS_PATH = os.path.join(ROOT, "assets", "css", "fonts.css")
+OUT_DIR = os.path.join(ROOT, "src", "assets", "fonts")
+CSS_PATH = os.path.join(ROOT, "src", "styles", "fonts.css")
 
-# MiSans 原始 usWeightClass -> 站点使用的 CSS 字重
+# MiSans 的 usWeightClass 是自定义值 -> 站点使用的 CSS 字重
 WEIGHT_MAP = {
-    200: ("MiSans-ExtraLight.woff2", 200),
-    250: ("MiSans-Light.woff2", 300),
     330: ("MiSans-Regular.woff2", 400),
     380: ("MiSans-Medium.woff2", 500),
     520: ("MiSans-Semibold.woff2", 600),
-    630: ("MiSans-Bold.woff2", 700),
 }
 
 EXTRA = (
     "".join(chr(c) for c in range(0x20, 0x7F))
-    + "　、。〃〈〉《》「」『』【】〔〕〖〗〝〞–—‘’“”…※→←↑↓↔⇒⇔"
-    + "±×÷≈≠≤≥∞°′″‰％‰¥€$¢£§¶©®™†‡•‥"
+    + "　、。〃〈〉《》「」『』【】〔〕〖〗〝〞–—‘’“”…※→←↑↓"
+    + "±×÷≈≠≤≥∞°′″‰％¥€$¢£§¶©®™†‡•‥"
     + "①②③④⑤⑥⑦⑧⑨⑩ⅠⅡⅢⅣⅤ"
     + "─│┌┐└┘├┤┬┴┼"
     + "αβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ"
-    + "✓✔✕✗●○◆◇■□▲△▼▽★☆"
+    + "●○◆◇■□▲△▼▽★☆✓"
 )
 
 
 def collect_chars():
     chars = set(EXTRA)
     patterns = [
-        os.path.join(ROOT, "*.html"),
-        os.path.join(ROOT, "assets", "**", "*.js"),
-        os.path.join(ROOT, "assets", "**", "*.css"),
-        os.path.join(ROOT, "assets", "**", "*.html"),
+        os.path.join(ROOT, "index.html"),
+        os.path.join(ROOT, "src", "**", "*.ts"),
+        os.path.join(ROOT, "src", "**", "*.tsx"),
+        os.path.join(ROOT, "src", "**", "*.css"),
     ]
     files = []
     for p in patterns:
@@ -67,15 +64,14 @@ def collect_chars():
                 chars.update(fh.read())
         except UnicodeDecodeError:
             continue
-    # 去掉控制字符
     return {c for c in chars if c.isprintable() or c == " "}
 
 
 def build(chars):
     os.makedirs(OUT_DIR, exist_ok=True)
     text = "".join(sorted(chars))
-    report = []
     faces = []
+    total = 0
 
     for src_weight, (fname, css_weight) in sorted(WEIGHT_MAP.items()):
         src = os.path.join(SRC_DIR, fname)
@@ -100,8 +96,6 @@ def build(chars):
         sub = Subsetter(options=opts)
         sub.populate(text=text)
         sub.subset(font)
-
-        # 让浏览器按 CSS 标准字重匹配，避免伪粗体
         font["OS/2"].usWeightClass = css_weight
         if "fvar" in font:
             del font["fvar"]
@@ -109,29 +103,29 @@ def build(chars):
         out = os.path.join(OUT_DIR, f"MiSans-{css_weight}.woff2")
         font.save(out)
         size = os.path.getsize(out)
-        report.append((css_weight, out, size))
-        faces.append(
-            '@font-face{font-family:"MiSans";font-style:normal;font-weight:%d;'
-            'font-display:swap;src:url("../fonts/MiSans-%d.woff2") format("woff2")}'
-            % (css_weight, css_weight)
-        )
+        total += size
         font.close()
-        print(f"[ok] {fname} -> MiSans-{css_weight}.woff2  {size/1024:.1f} KB")
+        print(f"[ok] {fname} -> MiSans-{css_weight}.woff2  {size / 1024:.1f} KB")
 
-    header = (
-        "/* fonts.css — 由 tools/subset_fonts.py 自动生成，请勿手改 */\n"
-        "/* 源字体：MiSans（本地全量 woff2 子集化，字符集取自站点实际内容） */\n"
-    )
+        faces.append(
+            "@font-face {\n"
+            "  font-family: 'MiSans';\n"
+            "  font-style: normal;\n"
+            f"  font-weight: {css_weight};\n"
+            "  font-display: swap;\n"
+            f"  src: url('../assets/fonts/MiSans-{css_weight}.woff2') format('woff2');\n"
+            "}\n"
+        )
+
+    header = "/* fonts.css — 由 tools/subset_fonts.py 生成，字符集取自 src 全量文本 */\n\n"
     with open(CSS_PATH, "w", encoding="utf-8", newline="\n") as fh:
-        fh.write(header + "\n".join(faces) + "\n")
+        fh.write(header + "\n".join(faces))
 
-    total = sum(r[2] for r in report)
-    print(f"\n共 {len(report)} 个字重，合计 {total/1024:.1f} KB（字符集 {len(chars)} 个字符）")
+    print(f"\n共 {len(faces)} 个字重，合计 {total / 1024:.1f} KB（字符集 {len(chars)} 个字符）")
 
 
 def check(chars):
     ok = True
-    # 以源字体的实际覆盖为准：源字体本身没有的符号（如 ↔ ✔）不算缺字
     src = TTFont(os.path.join(SRC_DIR, "MiSans-Regular.woff2"))
     src_cmap = set(src.getBestCmap().keys())
     src.close()
@@ -148,8 +142,7 @@ def check(chars):
         missing = sorted(c for c in expected if c not in " \t\n\r" and ord(c) not in cmap)
         if missing:
             ok = False
-            preview = "".join(missing[:40])
-            print(f"[缺字] MiSans-{css_weight}.woff2 缺 {len(missing)} 个字符：{preview}")
+            print(f"[缺字] MiSans-{css_weight}.woff2 缺 {len(missing)} 个字符：{''.join(missing[:40])}")
         font.close()
     print("缺字检查通过" if ok else "缺字检查未通过，请重新运行子集化")
     return ok

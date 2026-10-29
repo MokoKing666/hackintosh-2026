@@ -1,0 +1,161 @@
+/* ============================================================
+   tokens.css — 设计令牌（唯一来源，组件不得硬编码色值）
+   ============================================================ */
+
+:root {
+  /* 基础纸面与墨色 */
+  --paper-0: #ffffff;
+  --paper-25: #ffffff;
+  --paper-50: #f5f5f7;
+  --paper-100: #ececf0;
+  --ink-900: #1d1d1f;
+  --ink-700: #3a3a40;
+  --ink-600: #6e6e73;
+  --ink-500: #86868b;
+  --ink-300: #b4b4bc;
+
+  --fg-primary: var(--ink-900);
+  --fg-secondary: var(--ink-600);
+  --fg-tertiary: var(--ink-500);
+  --bg-page: var(--paper-25);
+  --bg-surface: var(--paper-0);
+  --bg-sunken: var(--paper-50);
+
+  --line: #ebebef;
+  --line-strong: #d2d2d7;
+  --line-grid: #f0f0f3;
+
+  /* 交互色只用于链接、焦点、主按钮 */
+  --accent: #0071e3;
+  --accent-hover: #0062c4;
+  --accent-soft: rgba(0, 102, 204, 0.08);
+  --focus-ring: #0071e3;
+
+  /* 六态语义色：fill / bg / border 三元组 */
+  --st-verified: #0f7b4f;
+  --st-verified-bg: #e8f5ee;
+  --st-verified-line: #b7dcc6;
+  --st-conditional: #2563eb;
+  --st-conditional-bg: #eaf1fe;
+  --st-conditional-line: #bfd3fa;
+  --st-experimental: #7a4fd8;
+  --st-experimental-bg: #f1ebfe;
+  --st-experimental-line: #d6c7f7;
+  --st-unverified: #c2410c;
+  --st-unverified-bg: #fdf0e7;
+  --st-unverified-line: #f0cbac;
+  --st-incompatible: #b42318;
+  --st-incompatible-bg: #fdecea;
+  --st-incompatible-line: #f3c2bc;
+  --st-unknown: #57534e;
+  --st-unknown-bg: #f1f0ee;
+  --st-unknown-line: #d8d5d1;
+
+  /* 证据等级 */
+  --ev-official: #1e4fb8;
+  --ev-upstream: #0f766e;
+  --ev-reproducible: #3f6212;
+  --ev-community: #6b7280;
+  --ev-vendor: #b45309;
+  --ev-inference: #9ca3af;
+
+  /* 字体：只有三档字重，杜绝伪粗体 */
+  --font-sans:
+    'MiSans', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Segoe UI', sans-serif;
+  --font-mono:
+    'SFMono-Regular', 'Cascadia Mono', 'JetBrains Mono', Consolas, 'Liberation Mono', monospace;
+
+  --fs-display: clamp(2.5rem, 5.4vw, 3.75rem);
+  --fs-h1: clamp(1.875rem, 3.2vw, 2.5rem);
+  --fs-h2: 1.5rem;
+  --fs-h3: 1.125rem;
+  --fs-body: 0.9375rem;
+  --fs-sm: 0.875rem;
+  --fs-cap: 0.75rem;
+  --fs-mono: 0.8125rem;
+
+  --lh-display: 1.14;
+  --lh-h1: 1.22;
+  --lh-h2: 1.35;
+  --lh-body: 1.75;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  /* 间距 4px 基准 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+
+  --r-xs: 2px;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+  --r-xl: 14px;
+  --r-pill: 999px;
+
+  --w-page: 1200px;
+  --w-text: 860px;
+  --header-h: 56px;
+
+  --shadow-sticky: 0 1px 0 var(--line), 0 6px 12px -8px rgba(0, 0, 0, 0.28);
+
+  --dur: 180ms;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* 表格规格 */
+  --row-h: 34px;
+  --cell-px: 12px;
+  --th-h: 34px;
+}
+
+/* 深色只用于少数「结论带」区块，不做全局暗色模式 */
+.section--invert {
+  --fg-primary: #f5f5f7;
+  --fg-secondary: #b9b9c0;
+  --fg-tertiary: #8e8e96;
+  --bg-page: #0b0b0f;
+  --bg-surface: #16161a;
+  --bg-sunken: #101014;
+  --line: rgba(255, 255, 255, 0.12);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --line-grid: rgba(255, 255, 255, 0.07);
+  --accent: #6cb2ff;
+  --accent-hover: #93c6ff;
+  --accent-soft: rgba(108, 178, 255, 0.12);
+  --focus-ring: #6cb2ff;
+  --st-verified: #4fd07f;
+  --st-verified-bg: rgba(79, 208, 127, 0.12);
+  --st-verified-line: rgba(79, 208, 127, 0.3);
+  --st-conditional: #7fb0ff;
+  --st-conditional-bg: rgba(127, 176, 255, 0.12);
+  --st-conditional-line: rgba(127, 176, 255, 0.3);
+  --st-experimental: #b39bf7;
+  --st-experimental-bg: rgba(179, 155, 247, 0.14);
+  --st-experimental-line: rgba(179, 155, 247, 0.32);
+  --st-unverified: #f0a06a;
+  --st-unverified-bg: rgba(240, 160, 106, 0.14);
+  --st-unverified-line: rgba(240, 160, 106, 0.32);
+  --st-incompatible: #ff7a6e;
+  --st-incompatible-bg: rgba(255, 122, 110, 0.12);
+  --st-incompatible-line: rgba(255, 122, 110, 0.32);
+  --st-unknown: #b8b3ad;
+  --st-unknown-bg: rgba(184, 179, 173, 0.12);
+  --st-unknown-line: rgba(184, 179, 173, 0.3);
+  background: var(--bg-page);
+  color: var(--fg-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur: 0ms;
+  }
+}
