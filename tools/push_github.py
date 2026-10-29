@@ -12,6 +12,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -35,14 +36,27 @@ def call(method, path, payload=None, tok=None):
     req.add_header("User-Agent", "hackintosh-2026-publisher")
     if data:
         req.add_header("Content-Type", "application/json")
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            body = r.read().decode("utf-8")
-            return r.status, (json.loads(body) if body else {})
-    except urllib.error.HTTPError as e:
-        detail = e.read().decode("utf-8", "replace")
-        print(f"[{e.code}] {method} {path}\n{detail[:400]}")
-        raise
+    last = None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=90) as r:
+                body = r.read().decode("utf-8")
+                return r.status, (json.loads(body) if body else {})
+        except urllib.error.HTTPError as e:
+            if e.code >= 500 and attempt < 2:
+                last = e
+                time.sleep(2 + attempt * 3)
+                continue
+            detail = e.read().decode("utf-8", "replace")
+            print(f"[{e.code}] {method} {path}\n{detail[:400]}")
+            raise
+        except urllib.error.URLError as e:
+            last = e
+            if attempt < 2:
+                time.sleep(2 + attempt * 3)
+                continue
+            raise
+    raise last if last else RuntimeError("请求失败")
 
 
 def tracked_files():
