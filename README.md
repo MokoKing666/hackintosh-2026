@@ -83,9 +83,9 @@ docs/               DESIGN.md（设计令牌与组件规范）、MIGRATION.md、
 
 ## 部署
 
-推送到 `main` 触发 `.github/workflows/deploy.yml`：类型检查 → Lint → 格式 → 单测 → E2E → 构建 → 子路径自检 → 上传 artifact → 部署 Pages。
+推送到 `main` 触发 `.github/workflows/deploy.yml`：类型检查 → Lint → 格式 → 单测 → **构建** → 子路径自检 → E2E → 上传 artifact → 部署 Pages。构建放在 E2E 之前，因为 Playwright 的 webServer 用 `vite preview`，需要 `dist` 已存在。
 
-Pages 的 Source 需设为 **GitHub Actions**（不是 branch）。仓库名必须保持 `hackintosh-2026`，否则要同步修改 `vite.config.ts` 的 `base`。
+Pages 的 Source 已设为 **GitHub Actions**（`build_type: workflow`），站点由流水线产物直接部署，不再依赖 `gh-pages` 分支（该分支保留为历史备份，可删除）。仓库名必须保持 `hackintosh-2026`，否则要同步修改 `vite.config.ts` 的 `base`。
 
 本地验证产物：
 
