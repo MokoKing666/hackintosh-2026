@@ -1,0 +1,1 @@
+var e={cpu:`CPU`,igpu:`核显`,dgpu:`独显`,apu:`APU`,wifi:`无线`,ethernet:`有线`,audio:`音频`,storage:`存储`,arm:`ARM`,bootloader:`引导器`,system:`系统`},t={intel:`Intel`,amd:`AMD`,nvidia:`NVIDIA`,broadcom:`Broadcom`,"intel-wifi":`Intel 无线`,realtek:`Realtek`,mediatek:`MediaTek`,qualcomm:`Qualcomm`,rockchip:`Rockchip`,arm:`ARM`,system:`系统`};export{t as n,e as t};

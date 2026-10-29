@@ -1,20 +1,83 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#fbfbfd" />
-    <title>黑苹果配置全景 2026 · x86 定格，ARM 开闸</title>
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#000000" />
+    <title>黑苹果配置全景 2026 — x86 终章、ARM 移植与硬件兼容取证库</title>
     <meta
       name="description"
-      content="2026 年 10 月黑苹果全景：macOS 27 终结 Intel，ARM 四条移植路线，N 卡第三方驱动重新点亮。含硬件兼容矩阵、项目图谱与配置生成器。"
+      content="系统整理 2026 年非官方 macOS 的技术现状：macOS 26 Tahoe 作为最后一代支持 x86_64 的系统、macOS 27 Golden Gate 的架构断层、Intel/AMD 平台兼容矩阵、NullMoth 与 WhateverXe 驱动的真实边界、ARM64 移植实验的代码公开度，以及可验证的硬件配置评估引擎。"
     />
+    <meta name="author" content="Hackintosh Panorama 2026" />
+    <link rel="canonical" href="https://mokoking666.github.io/hackintosh-2026/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="黑苹果配置全景 2026" />
+    <meta property="og:title" content="黑苹果配置全景 2026 — x86 终章、ARM 移植与硬件兼容取证库" />
+    <meta
+      property="og:description"
+      content="macOS 26 Tahoe 是 x86 的终点，macOS 27 是架构断层。这里只记录经过代码与实机取证的技术事实，不兜售「完美免驱」。"
+    />
+    <meta property="og:url" content="https://mokoking666.github.io/hackintosh-2026/" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="黑苹果配置全景 2026" />
+    <meta
+      name="twitter:description"
+      content="x86 终章、ARM 移植与硬件兼容取证库：50 条硬件记录、86 个开源项目、30 条结论台账。"
+    />
+
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <script type="module" crossorigin src="/hackintosh-2026/assets/index-CugDMsql.js"></script>
-    <link rel="stylesheet" crossorigin href="/hackintosh-2026/assets/index-Sj5pFmIA.css">
+    <script type="module" crossorigin src="/hackintosh-2026/assets/index-Dt0epmys.js"></script>
+    <link rel="stylesheet" crossorigin href="/hackintosh-2026/assets/index-utEO9Dv8.css">
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <div
+        style="
+          max-width: 780px;
+          margin: 64px auto;
+          padding: 0 24px;
+          font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+          color: #1d1d1f;
+          line-height: 1.75;
+        "
+      >
+        <h1 style="font-size: 32px; letter-spacing: -0.02em">黑苹果配置全景 2026</h1>
+        <p>本页需要 JavaScript 才能交互。以下是静态技术摘要：</p>
+        <ul>
+          <li>
+            <strong>系统边界</strong>：macOS 26 Tahoe（含 26.7）是最后一个支持 Intel x86_64 的版本；macOS 27 Golden Gate
+            仅支持 Apple Silicon。
+          </li>
+          <li><strong>x86 上限</strong>：黑苹果的系统天花板为 macOS 26.7.x，Tahoe 仅剩 4 个可用 SMBIOS。</li>
+          <li>
+            <strong>Intel 平台</strong>：Comet Lake 的 UHD 630 是最后一代免驱核显；12 代起需 CPUID 伪装与
+            ProvideCurrentCpuInfo。
+          </li>
+          <li>
+            <strong>AMD 平台</strong>：依赖 AMD Vanilla 内核补丁，代价是没有 Hypervisor.framework，Docker
+            与桌面虚拟化不可用。
+          </li>
+          <li>
+            <strong>显卡</strong>：AMD Polaris 至 Navi 2x 免驱，Navi 3x 无解；NVIDIA Turing 及更新仅有第三方 NullMoth
+            驱动，性能远低于 Windows。
+          </li>
+          <li>
+            <strong>ARM 移植</strong>：UniXNU、Snapintosh、RK3588、ios-sweet 四条路线均处于实验阶段，其中 RK3588
+            仅有项目方声明。
+          </li>
+          <li>
+            <strong>虚拟化</strong>：QEMU/KVM 可运行 x86 版 macOS；Apple Virtualization.framework 仅限 Apple 硬件。
+          </li>
+        </ul>
+        <p style="color: #6e6e73; font-size: 14px">
+          数据截止 2026-10-29。本站不提供任何 Apple 二进制、EFI 或安装镜像。
+        </p>
+      </div>
+    </noscript>
   </body>
 </html>
