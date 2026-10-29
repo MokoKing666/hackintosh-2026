@@ -35,7 +35,7 @@ const OS_BOUNDARY = [
 const count = (fn: (h: (typeof HARDWARE)[number]) => boolean) => HARDWARE.filter(fn).length;
 
 export function HomePage() {
-  useDocumentTitle('总览');
+  useDocumentTitle('黑苹果配置全景 2026 — x86 终章、ARM 移植与硬件兼容取证库', true);
 
   const entries = [
     {

@@ -2,9 +2,12 @@ import { useEffect } from 'react';
 
 const SUFFIX = '黑苹果配置全景 2026';
 
-/** 每个页面设置独立标题，便于分享与历史记录识别 */
-export function useDocumentTitle(title: string): void {
+/**
+ * 设置页面标题。
+ * raw = true 时直接使用传入文本（首页用完整 SEO 标题），否则追加站点后缀。
+ */
+export function useDocumentTitle(title: string, raw = false): void {
   useEffect(() => {
-    document.title = title ? `${title} · ${SUFFIX}` : SUFFIX;
-  }, [title]);
+    document.title = raw ? title : title ? `${title} · ${SUFFIX}` : SUFFIX;
+  }, [title, raw]);
 }
