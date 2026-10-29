@@ -2,6 +2,8 @@
 
 一份关于 2026 年 10 月黑苹果（Hackintosh）现状的静态站点：x86 定格在 macOS 26.7，ARM 四条移植路线同时开跑，N 卡被第三方驱动重新点亮。
 
+**在线访问：https://mokoking666.github.io/hackintosh-2026/**
+
 纯静态，无框架、无 CDN、无追踪，字体本地子集化。
 
 ## 页面
