@@ -133,6 +133,11 @@ export function GpuPage() {
 
       <section className="section">
         <div className="container">
+          <div className="callout callout--danger" style={{ marginBottom: 28 }}>
+            <strong>Intel 独显同样无解：</strong>Arc A 系列（Alchemist）与 B 系列（Battlemage）
+            都没有 macOS 驱动，DG1 同理。Arc 需要 ReBAR，但缺驱动与 ReBAR 无关—— 不要因为「N
+            卡都能被社区救活」就推断 Arc 也有机会。
+          </div>
           <div className="split">
             <div>
               <p className="eyebrow">专题 · Intel</p>

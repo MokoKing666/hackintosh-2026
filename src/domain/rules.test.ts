@@ -167,6 +167,34 @@ describe('规则引擎 · 缺失输入与确定性', () => {
     expect(r.findings.some((f) => f.text.includes('OCLP'))).toBe(true);
   });
 
+  it('Intel Arc A 系列直接阻断', () => {
+    const r = run({ gpuId: 'gpu-arc-a' });
+    expect(r.verdict).toBe('incompatible');
+    expect(r.findings.some((f) => f.text.includes('没有任何 macOS 驱动'))).toBe(true);
+  });
+
+  it('X99 平台的系统上限是 Monterey', () => {
+    const r = run({ cpuId: 'cpu-xeon-e5-v3v4', boardId: 'board-x99', targetOs: '12' });
+    expect(r.osCap.max).toBe('26.7');
+    expect(r.findings.some((f) => f.text.includes('TSC'))).toBe(true);
+  });
+
+  it('主板插槽不匹配（X99 主板 + Comet Lake）必须阻断', () => {
+    const r = run({ cpuId: 'cpu-intel-comet', boardId: 'board-x99' });
+    expect(r.verdict).toBe('incompatible');
+    expect(r.findings.some((f) => f.text.includes('插槽'))).toBe(true);
+  });
+
+  it('Threadripper 7960X 判为实验性', () => {
+    const r = run({
+      platform: 'amd',
+      cpuId: 'cpu-amd-tr-7000',
+      boardId: 'board-str5',
+      gpuId: 'gpu-rx6600',
+    });
+    expect(r.verdict).toBe('experimental');
+  });
+
   it('缺少 CPU 返回信息不足', () => {
     const r = run({ cpuId: null });
     expect(r.verdict).toBe('unknown');

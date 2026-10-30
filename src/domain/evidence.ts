@@ -391,6 +391,43 @@ export const EVIDENCE: readonly Evidence[] = [
     checkedAt: CHECKED,
     note: '由 Virtualization.framework 仅限 Apple 硬件、QEMU 无 arm64 macOS 机器模型两项事实推出。',
   },
+  {
+    id: 'E-DORTANIA-LEGACY',
+    title: 'Dortania · 旧平台安装指南（Sandy / Ivy / Haswell / Skylake / Kaby Lake 与 HEDT）',
+    url: 'https://dortania.github.io/OpenCore-Install-Guide/',
+    grade: 'official',
+    publisher: 'Dortania',
+    version: '2026 版',
+    checkedAt: CHECKED,
+    note: '各代际的原生系统上限、核显 framebuffer 与 XCPM 差异以此为准。',
+  },
+  {
+    id: 'E-OCLP-MODELS',
+    title: 'OpenCore Legacy Patcher · 支持机型与系统范围',
+    url: 'https://dortania.github.io/OpenCore-Legacy-Patcher/MODELS.html',
+    grade: 'official',
+    publisher: 'dortania',
+    checkedAt: CHECKED,
+    note: '用于判断旧平台在根补丁下能推到哪一代，以及代价（SIP、增量更新）。',
+  },
+  {
+    id: 'E-INTEL-ARC',
+    title: 'Intel Arc 独立显卡产品规格（Alchemist / Battlemage）',
+    url: 'https://www.intel.cn/content/www/cn/zh/products/docs/discrete-gpus/arc/overview.html',
+    grade: 'official',
+    publisher: 'Intel',
+    checkedAt: CHECKED,
+    note: 'Arc 需要 ReBAR；macOS 侧从未提供 Xe-HPG / Xe2 驱动。',
+  },
+  {
+    id: 'E-X99-GUIDE',
+    title: 'X99 / Xeon E5 v3-v4 平台黑苹果实践记录（CPUID 伪装与 TSC 同步）',
+    url: 'https://dortania.github.io/OpenCore-Install-Guide/config-HEDT/haswell-e.html',
+    grade: 'official',
+    publisher: 'Dortania',
+    checkedAt: CHECKED,
+    note: 'Haswell-E / Broadwell-E 的 config 差异、CPUID 与电源管理注意事项。',
+  },
 ] as const;
 
 const INDEX = new Map(EVIDENCE.map((e) => [e.id, e]));

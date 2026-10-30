@@ -239,6 +239,55 @@ export const CLAIMS: readonly Claim[] = [
     needsVerification: true,
     limits: '预测性结论，依据 Apple 历史支持周期推断，不构成承诺。',
   },
+  {
+    id: 'C-031',
+    statement: 'Intel Arc A 系列与 B 系列在 macOS 上完全无解，DG1 同理',
+    scope: 'Intel 独立显卡',
+    evidenceIds: ['E-INTEL-ARC', 'E-DORTANIA-GPU-AMD'],
+    needsVerification: false,
+    limits: 'Arc 需要 ReBAR，但缺少驱动与 ReBAR 无关；不存在任何官方或社区可用实现。',
+  },
+  {
+    id: 'C-032',
+    statement: 'X99 / Xeon E5 v3-v4 平台原生上限为 macOS Monterey，Ventura 起需 OCLP 根补丁',
+    scope: 'LGA2011-3 HEDT',
+    evidenceIds: ['E-X99-GUIDE', 'E-OCLP-MODELS'],
+    needsVerification: false,
+    limits: '需 CPUID 伪装与 TSC 同步；XCPM 不完整，睡眠与变频要手工调。',
+  },
+  {
+    id: 'C-033',
+    statement: 'X79 / X58 等 legacy 平台原生止于 Catalina，再往上只能靠根补丁',
+    scope: 'LGA2011 / LGA1366',
+    evidenceIds: ['E-DORTANIA-LEGACY', 'E-OCLP-MODELS'],
+    needsVerification: false,
+    limits: '无原生电源管理，S3 睡眠基本不可用；收益低于折腾成本。',
+  },
+  {
+    id: 'C-034',
+    statement: 'Haswell / Skylake / Kaby Lake 的原生上限分别是 Big Sur / Monterey / Ventura',
+    scope: 'LGA1150 / LGA1151 消费级',
+    evidenceIds: ['E-DORTANIA-LEGACY', 'E-OCLP-MODELS'],
+    needsVerification: false,
+    limits: '再往上一代都需 OCLP 根补丁，且会失去部分图形加速。',
+  },
+  {
+    id: 'C-035',
+    statement: 'Xeon Scalable（C621）缺少可用案例，只能算实验性尝试',
+    scope: 'LGA4189 服务器平台',
+    evidenceIds: ['E-DORTANIA-LEGACY'],
+    needsVerification: true,
+    limits: 'NUMA 与多路中断路由超出社区补丁覆盖范围，稳定性无保证。',
+  },
+  {
+    id: 'C-036',
+    statement:
+      'HEDT 平台（X299 / TRX40 / sTR5 / WRX80）除 CPU 补丁外，还要额外处理 PCIe 通道与 USB 映射',
+    scope: 'AMD / Intel HEDT',
+    evidenceIds: ['E-AMD-VANILLA', 'E-X99-GUIDE'],
+    needsVerification: false,
+    limits: '通道越多，USB 定制的组合爆炸越严重，常成为最后一道坎。',
+  },
 ] as const;
 
 export const CORRECTIONS: readonly Correction[] = [

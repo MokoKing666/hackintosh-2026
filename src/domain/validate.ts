@@ -13,7 +13,19 @@ const verdict = z.enum([
   'incompatible',
   'unknown',
 ]);
-const osVersion = z.enum(['10.13', '11', '12', '13', '14', '15', '15.2', '26', '26.7', '27']);
+const osVersion = z.enum([
+  '10.13',
+  '10.15',
+  '11',
+  '12',
+  '13',
+  '14',
+  '15',
+  '15.2',
+  '26',
+  '26.7',
+  '27',
+]);
 const evidenceId = z.string().regex(/^E-[A-Z0-9-]+$/);
 const claimId = z.string().regex(/^C-\d{3}$/);
 

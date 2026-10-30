@@ -140,7 +140,7 @@ describe('LibraryPage', () => {
       </MemoryRouter>,
     );
     expect(await screen.findByRole('table', { name: '硬件兼容矩阵' })).toBeInTheDocument();
-    expect(container.querySelector('.toolbar__count')?.textContent).toMatch(/50 \/ 50/);
+    expect(container.querySelector('.toolbar__count')?.textContent).toMatch(/65 \/ 65/);
   });
 
   it('切换到项目图谱', async () => {

@@ -47,7 +47,7 @@ test.describe('资料库交互', () => {
     await page.goto('library');
     await page.getByRole('button', { name: '不兼容', exact: true }).click();
     const count = page.locator('.toolbar__count').first();
-    await expect(count).toContainText('/ 50');
+    await expect(count).toContainText('/ 65');
     await expect(page.getByRole('table')).toContainText('Navi 3x');
   });
 

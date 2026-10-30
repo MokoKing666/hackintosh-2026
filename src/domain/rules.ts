@@ -5,6 +5,7 @@ import type { Finding, BuildInput, BuildResult, MacOsVersion, OsRange, Verdict }
 /** 版本排序用的数值映射；不要用字符串比较 */
 export const OS_VALUE: Record<MacOsVersion, number> = {
   '10.13': 10.13,
+  '10.15': 10.15,
   '11': 11,
   '12': 12,
   '13': 13,

@@ -26,7 +26,7 @@ React + TypeScript + Vite 单页应用，纯静态部署在 GitHub Pages 子路�
 | 路由     | React Router 7（BrowserRouter + basename），深链接靠 `404.html` 兜底 |
 | 样式     | 全局设计令牌（`src/styles/tokens.css`）+ 单一组件样式表，无 UI 框架  |
 | 数据校验 | Zod 4，启动时校验结构与证据引用                                      |
-| 测试     | Vitest + Testing Library（42 例）、Playwright（30 例）               |
+| 测试     | Vitest + Testing Library（46 例）、Playwright（30 例）               |
 | 质量     | ESLint 9（flat config）、Prettier                                    |
 | 部署     | GitHub Actions → Pages（artifact 方式）                              |
 
@@ -48,7 +48,7 @@ npm run verify    # 类型检查 + Lint + 单测 + 构建
 npm run typecheck   # tsc -b --force
 npm run lint        # eslint .
 npm run format      # prettier --check .
-npm run test        # vitest run（42 例）
+npm run test        # vitest run（46 例）
 npm run e2e         # playwright（30 例，桌面 + 移动）
 npm run build       # tsc -b && vite build + postbuild
 ```
@@ -59,10 +59,10 @@ npm run build       # tsc -b && vite build + postbuild
 src/
   domain/           唯一数据源与规则引擎（纯 TS，不依赖 React）
     types.ts        领域类型：六态、证据等级、硬件/项目/结论
-    evidence.ts     证据库（43 条，带版本、核验日期、失效标记）
-    hardware.ts     50 条硬件兼容记录
+    evidence.ts     证据库（47 条，带版本、核验日期、失效标记）
+    hardware.ts     65 条硬件兼容记录（含 HEDT、至强与旧平台）
     projects.ts     86 个项目 + 20 个失效项目
-    claims.ts       30 条结论台账 + 8 条取证纠错
+    claims.ts       36 条结论台账 + 8 条取证纠错
     boards.ts       主板与插槽（配置生成器用）
     rules.ts        solve()：平台闸门 → 版本闸门 → CPU → 图形 → 冲突 → 结论
     validate.ts     Zod 运行时校验 + 证据引用完整性检查

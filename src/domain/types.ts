@@ -40,7 +40,7 @@ export interface Evidence {
 }
 
 export type MacOsVersion =
-  '10.13' | '11' | '12' | '13' | '14' | '15' | '15.2' | '26' | '26.7' | '27';
+  '10.13' | '10.15' | '11' | '12' | '13' | '14' | '15' | '15.2' | '26' | '26.7' | '27';
 
 export interface OsRange {
   min?: MacOsVersion;
